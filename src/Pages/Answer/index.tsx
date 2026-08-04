@@ -5,7 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { CheckCircleIcon } from "lucide-react";
 import { ErrorToaster, SuccessToaster } from "@/UI/Elements/Toast";
-import { useChildrenloginMutation } from "@/service/apiSlice";
+import { useLoginMutation } from "@/service/apiSlice";
 import { useAnswerPaperMutation } from "@/service/paper";
 import { loginSuccess, handleLogout } from "@/slice/authSlice";
 import { useDispatch } from "react-redux";
@@ -16,7 +16,7 @@ const Answer = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const [childLogin] = useChildrenloginMutation();
+  const [login] = useLoginMutation();
   const [answerQuestion] = useAnswerPaperMutation();
 
   const { data: singlePaper, isLoading: paperLoading } = useGetSinglePaperQuery(
