@@ -73,9 +73,12 @@ const authSlice = createSlice({
 });
 
 export const {
-  loginSuccess,
-  updateUser,
-  logout,
+    loginSuccess,
+    updateUser,
+    logout,
 } = authSlice.actions;
+
+// Backward compatibility
+export const handleLogout = logout;
 
 export default authSlice.reducer;
