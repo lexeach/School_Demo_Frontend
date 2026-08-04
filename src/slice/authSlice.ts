@@ -72,6 +72,22 @@ const authSlice = createSlice({
   },
 });
 
+
+childrenLogin: builder.mutation({
+  query: (body) => ({
+    url: "/users/children-login",
+    method: "POST",
+    body,
+  }),
+}),
+
+export const {
+  useRegisterMutation,
+  useLoginMutation,
+  useChildrenLoginMutation,
+  useGetProfileQuery,
+  useUpdateProfileMutation,
+} = apiSlice;
 export const {
     loginSuccess,
     updateUser,
