@@ -77,3 +77,5 @@ export const {
   useGetProfileQuery,
   useUpdateProfileMutation,
 } = apiSlice;
+
+export default apiSlice;
