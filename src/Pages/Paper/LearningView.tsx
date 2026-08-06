@@ -706,58 +706,94 @@ console.log(
 // Parallel Search
 //--------------------------------------------------
 
-const [videoResponse, pdfResponse] = await Promise.all([
+//--------------------------------------------------
+// Video Search
+//--------------------------------------------------
 
-    api.get("/api/youtube/search", {
+let videos: any[] = [];
+
+try {
+
+    const videoResponse = await api.get("/api/youtube/search", {
         params: {
             q: query,
         },
-    }),
+    });
 
-    api.get("/api/pdf/search", {
+    videos = videoResponse?.data?.videos || [];
+
+} catch (err) {
+
+    console.error("Video Search Error", err);
+
+    videos = [];
+
+}
+
+//--------------------------------------------------
+// PDF Search
+//--------------------------------------------------
+
+let pdfs: any[] = [];
+
+try {
+
+    const pdfResponse = await api.get("/api/pdf/search", {
         params: {
             query:
                 learningData?.data?.pdfSearchQuery ||
                 learningData?.data?.videoSearchQuery ||
                 query,
         },
-    }),
+    });
 
-]);
+    pdfs = pdfResponse?.data?.pdfs || [];
 
-const videos =
-    videoResponse.data.videos || [];
+} catch (err) {
 
-const pdfs =
-    pdfResponse.data.pdfs || [];
+    console.error("PDF Search Error", err);
 
-// Sort PDFs by relevance (highest first)
-pdfs.sort((a: any, b: any) => {
+    pdfs = [];
 
-    return (b.score || 0) - (a.score || 0);
+}
 
-});
+//--------------------------------------------------
+// Sort PDFs
+//--------------------------------------------------
+
+pdfs.sort((a: any, b: any) => (b.score || 0) - (a.score || 0));
+
+//--------------------------------------------------
+// Cache
+//--------------------------------------------------
 
 resourceCache.setItem(
-
     cacheKey,
-
     JSON.stringify(videos)
-
 );
 
 resourceCache.setItem(
-
     cacheKey + "_pdf",
-
     JSON.stringify(pdfs)
-
 );
+
+//--------------------------------------------------
+// Update UI
+//--------------------------------------------------
 
 setBrowserVideos(videos);
 
 setBrowserPdfs(pdfs);
 
+if (videos.length > 0) {
+
+    setIframeReady(false);
+
+    setSelectedVideo(videos[0].videoId);
+
+    setPlayingVideo(videos[0]);
+
+}
 if (videos.length > 0) {
 setIframeReady(false);
     setSelectedVideo(videos[0].videoId);
