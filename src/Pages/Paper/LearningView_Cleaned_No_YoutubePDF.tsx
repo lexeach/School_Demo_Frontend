@@ -77,8 +77,7 @@ const PaperView = () => {
   const [browserVideos] =
     useState<any[]>([]);
 
-  const [browserPdfs] =
-    useState<any[]>([]);
+ // const [browserPdfs] = useState<any[]>([]);
 
   // const resourceCache = sessionStorage;
 
