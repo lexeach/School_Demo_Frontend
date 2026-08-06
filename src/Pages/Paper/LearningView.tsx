@@ -699,7 +699,7 @@ if (
 
 console.log(
     "Calling =>",
-    `${import.meta.env.VITE_API_URL}/api/youtube/search`
+    `${import.meta.env.VITE_API_URL}/youtube/search`
 );
       
        //--------------------------------------------------
@@ -714,7 +714,7 @@ let videos: any[] = [];
 
 try {
 
-    const videoResponse = await api.get("/api/youtube/search", {
+    const videoResponse = await api.get("/youtube/search", {
         params: {
             q: query,
         },
@@ -738,7 +738,7 @@ let pdfs: any[] = [];
 
 try {
 
-    const pdfResponse = await api.get("/api/pdf/search", {
+    const pdfResponse = await api.get("/pdf/search", {
         params: {
             query:
                 learningData?.data?.pdfSearchQuery ||
