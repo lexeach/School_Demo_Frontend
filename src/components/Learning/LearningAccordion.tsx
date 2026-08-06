@@ -327,42 +327,56 @@ Please wait...
 
     />
 
-        {/* ===========================================================
-        VIDEO + PDF SECTION
-        To ENABLE this feature:
-        Replace "false" with "true"
-        =========================================================== */}
+            {/* ===========================================================
+        VIDEO PLAYER
+        false = Hide
+        true  = Show
+    =========================================================== */}
 
     {false && (
-        <>
-            <LearningVideoPlayer
-                selectedVideo={selectedVideo}
-                iframeReady={iframeReady}
-                setIframeReady={setIframeReady}
-                videoPlayerRef={videoPlayerRef}
-            />
+        <LearningVideoPlayer
+            selectedVideo={selectedVideo}
+            iframeReady={iframeReady}
+            setIframeReady={setIframeReady}
+            videoPlayerRef={videoPlayerRef}
+        />
+    )}
 
-            <YoutubeSection
-                videos={browserVideos}
-                selectedVideo={selectedVideo}
-                onPlay={(video) => {
-                    setIframeReady(false);
-                    setSelectedVideo(video.videoId);
-                    setPlayingVideo(video);
+    {/* ===========================================================
+        YOUTUBE VIDEO LIST
+        false = Hide
+        true  = Show
+    =========================================================== */}
 
-                    setTimeout(() => {
-                        videoPlayerRef.current?.scrollIntoView({
-                            behavior: "smooth",
-                            block: "start",
-                        });
-                    }, 150);
-                }}
-            />
+    {true && (
+        <YoutubeSection
+            videos={browserVideos}
+            selectedVideo={selectedVideo}
+            onPlay={(video) => {
+                setIframeReady(false);
+                setSelectedVideo(video.videoId);
+                setPlayingVideo(video);
 
-            <PdfViewer
-                pdfs={browserPdfs}
-            />
-        </>
+                setTimeout(() => {
+                    videoPlayerRef.current?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                    });
+                }, 150);
+            }}
+        />
+    )}
+
+    {/* ===========================================================
+        PDF SECTION
+        false = Hide
+        true  = Show
+    =========================================================== */}
+
+    {true && (
+        <PdfViewer
+            pdfs={browserPdfs}
+        />
     )}
 
 
