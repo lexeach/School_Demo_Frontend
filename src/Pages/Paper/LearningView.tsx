@@ -630,30 +630,57 @@ if (
 const cacheKey =
     `yt_${query}`;
 
-const cached =
+const cachedVideos =
     resourceCache.getItem(cacheKey);
 
-if (cached) {
+const cachedPdfs =
+    resourceCache.getItem(
+        cacheKey + "_pdf"
+    );
+
+if (cachedVideos) {
 
     const videos =
-        JSON.parse(cached);
+        JSON.parse(cachedVideos);
 
     setBrowserVideos(videos);
 
     if (videos.length > 0) {
 
-      setIframeReady(false);
-        setSelectedVideo(videos[0].videoId);
-setPlayingVideo(videos[0]);
+        setIframeReady(false);
+
+        setSelectedVideo(
+            videos[0].videoId
+        );
+
+        setPlayingVideo(
+            videos[0]
+        );
 
     }
+
+}
+
+if (cachedPdfs) {
+
+    setBrowserPdfs(
+
+        JSON.parse(cachedPdfs)
+
+    );
+
+}
+
+if (
+    cachedVideos ||
+    cachedPdfs
+) {
 
     setLoadingResources(false);
 
     return;
 
 }
-
         if (!query) {
 
     setBrowserVideos([]);
@@ -675,13 +702,41 @@ console.log(
     `${import.meta.env.VITE_API_URL}/api/youtube/search`
 );
       
-       const response = await api.get("/api/youtube/search", {
-    params: {
-        q: query,
-    },
-});
+       //--------------------------------------------------
+// Parallel Search
+//--------------------------------------------------
 
-        const videos = response.data.videos || [];
+const [videoResponse, pdfResponse] = await Promise.all([
+
+    api.get("/api/youtube/search", {
+        params: {
+            q: query,
+        },
+    }),
+
+    api.get("/api/pdf/search", {
+        params: {
+            query:
+                learningData?.data?.pdfSearchQuery ||
+                learningData?.data?.videoSearchQuery ||
+                query,
+        },
+    }),
+
+]);
+
+const videos =
+    videoResponse.data.videos || [];
+
+const pdfs =
+    pdfResponse.data.pdfs || [];
+
+// Sort PDFs by relevance (highest first)
+pdfs.sort((a: any, b: any) => {
+
+    return (b.score || 0) - (a.score || 0);
+
+});
 
 resourceCache.setItem(
 
@@ -691,7 +746,17 @@ resourceCache.setItem(
 
 );
 
+resourceCache.setItem(
+
+    cacheKey + "_pdf",
+
+    JSON.stringify(pdfs)
+
+);
+
 setBrowserVideos(videos);
+
+setBrowserPdfs(pdfs);
 
 if (videos.length > 0) {
 setIframeReady(false);
