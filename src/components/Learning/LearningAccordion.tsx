@@ -365,7 +365,7 @@ Please wait...
         </>
     )}
 
-// video and pdf false true ends here
+
     
 
 
