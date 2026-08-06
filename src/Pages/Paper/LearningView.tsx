@@ -18,7 +18,7 @@ import { CheckCircleIcon, XCircleIcon, BookOpen } from "lucide-react";
 
 import { useEffect, useState, useRef } from "react";
 //import axios from "axios";
-import api from "@/service/apiSlice";
+import api from "@/service/api";
 import {
     useYoutubePlayer
 } from "@/components/Learning/hooks";
