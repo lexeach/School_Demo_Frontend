@@ -327,26 +327,18 @@ Please wait...
 
     />
 
+    // uncommit this section to show video and pdf block on UI
+   /* 
     <LearningVideoPlayer
-
         selectedVideo={selectedVideo}
-
         iframeReady={iframeReady}
-
         setIframeReady={setIframeReady}
-
         videoPlayerRef={videoPlayerRef}
-
     />
-
     <YoutubeSection
-
         videos={browserVideos}
-
         selectedVideo={selectedVideo}
-
         onPlay={(video)=>{
-
             setIframeReady(false);
 
             setSelectedVideo(video.videoId);
@@ -374,6 +366,45 @@ Please wait...
         pdfs={browserPdfs}
 
     />
+   */
+
+    //un commit this section to hide video and pdf section on UI
+   
+    {false && (
+<>
+    <LearningVideoPlayer
+        selectedVideo={selectedVideo}
+        iframeReady={iframeReady}
+        setIframeReady={setIframeReady}
+        videoPlayerRef={videoPlayerRef}
+    />
+
+    <YoutubeSection
+        videos={browserVideos}
+        selectedVideo={selectedVideo}
+        onPlay={(video)=>{
+            setIframeReady(false);
+            setSelectedVideo(video.videoId);
+            setPlayingVideo(video);
+
+            setTimeout(()=>{
+                videoPlayerRef.current?.scrollIntoView({
+                    behavior:"smooth",
+                    block:"start",
+                });
+            },150);
+        }}
+    />
+</>
+)}
+
+    {false && (
+    <PdfViewer
+        pdfs={browserPdfs}
+    />
+)}
+
+    
 
 
 {!waitingForExplanation && (
