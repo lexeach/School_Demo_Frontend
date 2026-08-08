@@ -333,7 +333,7 @@ Please wait...
         true  = Show
     =========================================================== */}
 
-    {false && (
+    {true && (
         <LearningVideoPlayer
             selectedVideo={selectedVideo}
             iframeReady={iframeReady}
@@ -348,7 +348,7 @@ Please wait...
         true  = Show
     =========================================================== */}
 
-    {false && (
+    {true && (
         <YoutubeSection
             videos={browserVideos}
             selectedVideo={selectedVideo}
@@ -373,7 +373,7 @@ Please wait...
         true  = Show
     =========================================================== */}
 
-    {false && (
+    {true && (
         <PdfViewer
             pdfs={browserPdfs}
         />
