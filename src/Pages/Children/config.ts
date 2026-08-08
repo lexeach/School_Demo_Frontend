@@ -8,42 +8,44 @@ export const getTopicsByGrade = (selectedGrade?: string, selectedStream?: string
 
   if (grade === "6" || grade === "7") {
     return [
-      { value: "English", label: "English" },
-      { value: "Hindi", label: "Hindi" },
+      //{ value: "English", label: "English" },
+    //  { value: "Hindi", label: "Hindi" },
       { value: "Mathematics", label: "Mathematics" },
       { value: "Science", label: "Science" },
       { value: "Social Science", label: "Social Science" },
-      { value: "Urdu", label: "Urdu" },
-      { value: "Sanskrit", label: "Sanskrit" },
+      //{ value: "Urdu", label: "Urdu" },
+      //{ value: "Sanskrit", label: "Sanskrit" },
+      { value: "All Subject", label: "All Subject" },
     ];
   } else if (grade === "8") {
     return [
-      { value: "English", label: "English" },
-      { value: "Hindi", label: "Hindi" },
+      //{ value: "English", label: "English" },
+      //{ value: "Hindi", label: "Hindi" },
       { value: "Mathematics", label: "Mathematics" },
       { value: "Science", label: "Science" },
       { value: "Social Science", label: "Social Science" },
-      { value: "Urdu", label: "Urdu" },
-      { value: "Sanskrit", label: "Sanskrit" },
+      //{ value: "Urdu", label: "Urdu" },
+      //{ value: "Sanskrit", label: "Sanskrit" },
+      { value: "All Subject", label: "All Subject" },
     ];
   } else if (grade === "9" || grade === "10") {
     return [
-      { value: "English", label: "English" },
-      { value: "Hindi", label: "Hindi" },
+      //{ value: "English", label: "English" },
+      //{ value: "Hindi", label: "Hindi" },
       { value: "Mathematics", label: "Mathematics" },
       { value: "Science", label: "Science" },
       { value: "Social Science", label: "Social Science" },
-      { value: "Urdu", label: "Urdu" },
-      { value: "Sanskrit", label: "Sanskrit" },
+      //{ value: "Urdu", label: "Urdu" },
+      //{ value: "Sanskrit", label: "Sanskrit" },
       { value: "Information and Communication Technology", label: "Information and Communication Technology" },
       { value: "All Subject", label: "All Subject" },
     ];
   } else if (grade === "11" || grade === "12") {
     const commonLanguages = [
-      { value: "English", label: "English" },
-      { value: "Hindi", label: "Hindi" },
-      { value: "Sanskrit", label: "Sanskrit" },
-      { value: "Urdu", label: "Urdu" },
+      //{ value: "English", label: "English" },
+      //{ value: "Hindi", label: "Hindi" },
+      //{ value: "Sanskrit", label: "Sanskrit" },
+      //{ value: "Urdu", label: "Urdu" },
     ];
 
     if (selectedStream === "Science") {
@@ -67,6 +69,7 @@ export const getTopicsByGrade = (selectedGrade?: string, selectedStream?: string
         { value: "Mathematics", label: "Mathematics" },
         { value: "Informatics Practices", label: "Informatics Practices" },
         { value: "Financial Accounting", label: "Financial Accounting" },
+        { value: "All Subject", label: "All Subject" },
       ];
     } else if (selectedStream === "Humanities") {
       return [
@@ -78,6 +81,7 @@ export const getTopicsByGrade = (selectedGrade?: string, selectedStream?: string
         { value: "Psychology", label: "Psychology" },
         { value: "Home Science", label: "Home Science" },
         { value: "Creative Writing and Translation", label: "Creative Writing and Translation" },
+        { value: "All Subject", label: "All Subject" },
       ];
     }
     return [{ value: "", label: "← Select a Stream first", disabled: true }];
