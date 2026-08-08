@@ -392,34 +392,86 @@ const VerificationDialog = ({
     >
 
       <DialogContent
-    className="
-        w-[95vw]
-        max-w-3xl
-        h-[92vh]
-        p-0
-        overflow-hidden
-        flex
-        flex-col
-    "
+  className="
+    w-[95vw]
+    max-w-3xl
+    h-[92vh]
+    p-0
+    overflow-hidden
+    flex
+    flex-col
+    rounded-2xl
+    border-0
+    bg-gradient-to-br
+    from-slate-50
+    via-blue-50
+    to-indigo-50
+    shadow-2xl
+  "
 >
 
-        <DialogHeader className="px-6 pt-6 pb-3 border-b bg-white">
+        <DialogHeader
+  className="
+    px-6
+    pt-5
+    pb-5
+    border-b
+    border-blue-200
+    bg-gradient-to-r
+    from-blue-600
+    via-indigo-600
+    to-purple-600
+    text-white
+  "
+>
 
-          <DialogTitle className="text-xl">
+          <DialogTitle
+  className="
+    text-xl
+    sm:text-2xl
+    font-bold
+    text-white
+    flex
+    items-center
+    gap-3
+  "
+>
+  <span
+    className="
+      flex
+      items-center
+      justify-center
+      w-10
+      h-10
+      rounded-xl
+      bg-white/20
+      backdrop-blur-sm
+      text-lg
+    "
+  >
+    ✓
+  </span>
 
-            Learning Verification
-
-          </DialogTitle>
+  <span>
+    Learning Verification
+  </span>
+</DialogTitle>
 
         </DialogHeader>
 
         <div
-    className="
-        flex-1
-        overflow-y-auto
-        px-6
-        py-4
-    "
+  className="
+    flex-1
+    overflow-y-auto
+    px-4
+    sm:px-6
+    py-5
+    sm:py-6
+    bg-gradient-to-br
+    from-blue-50/70
+    via-white
+    to-purple-50/70
+  "
 >
 
           {questions.length >
@@ -447,10 +499,30 @@ const VerificationDialog = ({
 
         {/* Progress */}
 
-        <div className="mt-6 px-6">
-
+        <div
+  className="
+    px-4
+    sm:px-6
+    pt-4
+    pb-3
+    bg-white/80
+    backdrop-blur-sm
+    border-t
+    border-blue-100
+  "
+>
           
-          <div className="flex justify-between items-center text-sm text-gray-500 mb-2">  
+          <div
+  className="
+    flex
+    justify-between
+    items-center
+    text-sm
+    font-semibold
+    text-slate-600
+    mb-2
+  "
+>  
 
             <span>
 
@@ -469,11 +541,31 @@ const VerificationDialog = ({
           </div>
 
           
-            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+            <div
+  className="
+    w-full
+    bg-slate-200
+    rounded-full
+    h-3
+    overflow-hidden
+    shadow-inner
+  "
+>
 
               
                 <div
-    className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-in-out"
+    className="
+  bg-gradient-to-r
+  from-blue-500
+  via-indigo-500
+  to-purple-600
+  h-3
+  rounded-full
+  transition-all
+  duration-500
+  ease-in-out
+  shadow-sm
+"
                 
               style={{
                 width: `${
