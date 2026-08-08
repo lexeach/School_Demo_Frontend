@@ -59,7 +59,7 @@ export function Sidebar({ children }) {
             <ViewColumnsIcon height={24} />
           </UIButton>
           <div className="text-lg font-semibold ml-4">
-            Exowa Automated Assessment
+            KAMS PRACTICE SYSTEM
           </div>
         </div>
 
@@ -72,7 +72,7 @@ export function Sidebar({ children }) {
               className="h-8 w-8 object-contain"
             />
             <span className="text-lg font-semibold">
-              Exowa Automated Assessment
+              KAMS PRACTICE SYSTEM
             </span>
           </div>
           <Button
