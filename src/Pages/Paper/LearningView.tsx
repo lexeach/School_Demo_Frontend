@@ -695,12 +695,14 @@ if (
         //--------------------------------------------------
 
 
-      console.log("API URL =", import.meta.env.VITE_API_URL);
+      //console.log("API URL =", import.meta.env.VITE_API_URL);
+      //console.log("Calling =>",`${import.meta.env.VITE_API_URL}/youtube/search`);
 
-console.log(
-    "Calling =>",
-    `${import.meta.env.VITE_API_URL}/youtube/search`
-);
+      const response = await api.get("/api/youtube/search", {
+  params: {
+    q: query,
+  },
+});
       
        //--------------------------------------------------
 // Parallel Search
