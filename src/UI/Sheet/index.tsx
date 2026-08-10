@@ -7,7 +7,6 @@ import ChildrenForm from "@/Pages/Children/form";
 import SyllabusForm from "@/Pages/Syllabus/form";
 import SubjectForm from "@/Pages/Subject/form";
 import UpdateLimit from "@/Pages/User/form";
-import BulkUploadUsers from "@/Pages/User/BulkUploadUsers";
 
 import { setSheetClose } from "@/slice/layoutSlice";
 
@@ -31,10 +30,6 @@ const UISheet: React.FC = () => {
           )}
           {sheetComponent === "updateLimit" && (
             <UpdateLimit handleCancel={handleCancel} sheet={sheet} />
-          )}
-
-          {sheetComponent === "bulkUploadUsers" && (
-            <BulkUploadUsers />
           )}
 
           {sheetComponent === "addSubject" && (
