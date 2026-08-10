@@ -2,8 +2,11 @@ import UIBreadcrumb from "@/UI/Elements/Breadcrumb";
 import UILayout from "@/UI/Elements/Layout";
 import Chart1 from "./chart1";
 import { Upload, Download } from "lucide-react";
+import { useDispatch } from "react-redux";
+import { setFormOpen } from "@/slice/layoutSlice";
 
 const Dashboard = () => {
+  const dispatch = useDispatch();
   const breadcrumb = [
     {
       name: "home",
@@ -59,17 +62,18 @@ const Dashboard = () => {
   };
 
   /**
-   * Open bulk user upload form.
+   * Open the Bulk User Upload sheet.
    *
-   * The form component must be registered in the application's
-   * sheet/form component registry with:
-   *
-   * "bulkUploadUsers"
+   * This uses the same Redux sheet mechanism already used by
+   * the Users / Children / Subject / Syllabus pages.
    */
   const handleBulkUpload = () => {
-    const event = new CustomEvent("openBulkUserUpload");
-
-    window.dispatchEvent(event);
+    dispatch(
+      setFormOpen({
+        sheetComponent: "bulkUploadUsers",
+        style: "h-[95%] p-0",
+      })
+    );
   };
 
   return (

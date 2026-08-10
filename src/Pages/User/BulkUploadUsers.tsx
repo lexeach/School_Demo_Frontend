@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import * as XLSX from "xlsx";
+import { useBulkUploadUsersMutation } from "@/service/user";
 
 type UploadRow = {
   name: string;
@@ -40,6 +41,10 @@ const BulkUploadUsers: React.FC = () => {
   const [messageType, setMessageType] = useState<"success" | "error" | "">(
     ""
   );
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const [bulkUploadUsers, { isLoading: isApiUploading }] =
+    useBulkUploadUsersMutation();
 
   const normalizeHeader = (value: unknown) => {
     return String(value ?? "")
@@ -169,6 +174,7 @@ const BulkUploadUsers: React.FC = () => {
     setErrors([]);
     setRows([]);
     setFileName(file.name);
+    setSelectedFile(file);
     setIsReading(true);
 
     try {
@@ -179,7 +185,7 @@ const BulkUploadUsers: React.FC = () => {
 
       if (!["xlsx", "xls", "csv"].includes(extension || "")) {
         throw new Error(
-          "Please select a valid Excel file (.xlsx, .xls) or CSV file."
+          "Please select a valid Excel or CSV file (.xlsx, .xls, .csv)."
         );
       }
 
@@ -291,16 +297,14 @@ const BulkUploadUsers: React.FC = () => {
   };
 
   const handleUpload = async () => {
-    if (!rows.length) {
-      setMessage("Please select a valid Excel file first.");
+    if (!selectedFile || !rows.length) {
+      setMessage("Please choose an Excel or CSV file first.");
       setMessageType("error");
       return;
     }
 
     if (errors.length) {
-      setMessage(
-        "Please fix all Excel validation errors before uploading."
-      );
+      setMessage("Please fix all validation errors before uploading.");
       setMessageType("error");
       return;
     }
@@ -310,70 +314,33 @@ const BulkUploadUsers: React.FC = () => {
     setMessageType("");
 
     try {
-      /*
-       * IMPORTANT:
-       *
-       * We are intentionally keeping the API URL configurable.
-       * Replace this endpoint only if your backend route uses
-       * a different path.
-       */
-      const apiBaseUrl =
-        import.meta.env.VITE_API_URL ||
-        "https://school-demo-backend.onrender.com";
-
-      const token =
-        localStorage.getItem("token") ||
-        localStorage.getItem("accessToken");
-
-      const response = await fetch(
-        `${apiBaseUrl}/users/bulk-upload`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token
-              ? {
-                  Authorization: `Bearer ${token}`,
-                }
-              : {}),
-          },
-          body: JSON.stringify({
-            users: rows,
-          }),
-        }
-      );
-
-      const result = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        throw new Error(
-          result?.message ||
-            result?.error ||
-            "Bulk user upload failed."
-        );
-      }
+      // Send the ORIGINAL file as multipart/form-data.
+      // The existing RTK Query endpoint is already configured for
+      // /api/users/bulk-upload and expects the field name `file`.
+      const result = await bulkUploadUsers(selectedFile).unwrap();
 
       setMessage(
         result?.message ||
-          `${rows.length} user(s) uploaded successfully.`
+          `${rows.length} user(s) and child record(s) uploaded successfully.`
       );
-
       setMessageType("success");
 
       setRows([]);
       setErrors([]);
       setFileName("");
+      setSelectedFile(null);
 
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Bulk upload failed.";
+    } catch (error: any) {
+      const apiMessage =
+        error?.data?.message ||
+        error?.data?.error ||
+        error?.error ||
+        "Bulk user upload failed.";
 
-      setMessage(errorMessage);
+      setMessage(apiMessage);
       setMessageType("error");
     } finally {
       setIsUploading(false);
@@ -428,12 +395,12 @@ const BulkUploadUsers: React.FC = () => {
             <label className="cursor-pointer px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium">
               {isReading
                 ? "Reading File..."
-                : "Choose Excel File"}
+                : "Choose Excel / CSV File"}
 
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".xlsx,.xls,.csv"
+                accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
                 className="hidden"
                 onChange={handleFileChange}
                 disabled={isReading || isUploading}
@@ -580,13 +547,14 @@ const BulkUploadUsers: React.FC = () => {
               onClick={handleUpload}
               disabled={
                 isUploading ||
+                isApiUploading ||
                 isReading ||
                 !rows.length ||
                 errors.length > 0
               }
               className="px-6 py-2.5 rounded-lg bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-medium"
             >
-              {isUploading
+              {isUploading || isApiUploading
                 ? "Uploading..."
                 : "Upload User List"}
             </button>
