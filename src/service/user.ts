@@ -1,15 +1,18 @@
 import {
+  API_BULK_UPLOAD_USERS,
   API_GET_USER_DETAIL,
   API_GET_USER_LIST,
   API_UPDATE_TOPIC_LIMIT,
   API_UPDATE_USER_LIMIT,
 } from "@/config/url-constants";
+
 import baseQuery from "./baseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
 
 export const userSlice = createApi({
   reducerPath: "userApi",
   baseQuery,
+
   endpoints: (builder) => ({
     getUserList: builder.query({
       query: ({
@@ -19,7 +22,13 @@ export const userSlice = createApi({
         filter = {},
         sorting = {},
       }) => ({
-        url: API_GET_USER_LIST(page, pageSize, search, filter, sorting),
+        url: API_GET_USER_LIST(
+          page,
+          pageSize,
+          search,
+          filter,
+          sorting
+        ),
         method: "GET",
       }),
     }),
@@ -38,12 +47,30 @@ export const userSlice = createApi({
         body: payload,
       }),
     }),
+
     updateTopicLimit: builder.mutation({
       query: ({ id, ...payload }) => ({
         url: API_UPDATE_TOPIC_LIMIT(id),
         method: "PUT",
         body: payload,
       }),
+    }),
+
+    /**
+     * Bulk User + Child Excel Upload
+     */
+    bulkUploadUsers: builder.mutation({
+      query: (file: File) => {
+        const formData = new FormData();
+
+        formData.append("file", file);
+
+        return {
+          url: API_BULK_UPLOAD_USERS,
+          method: "POST",
+          body: formData,
+        };
+      },
     }),
   }),
 });
@@ -53,4 +80,5 @@ export const {
   useGetSingleUserQuery,
   useUpdateUserLimitMutation,
   useUpdateTopicLimitMutation,
+  useBulkUploadUsersMutation,
 } = userSlice;
