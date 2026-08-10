@@ -59,6 +59,7 @@ export const getTopicsByGrade = (selectedGrade?: string, selectedStream?: string
         { value: "Computer Science", label: "Computer Science" },
         { value: "Psychology", label: "Psychology" },
         { value: "Home Science", label: "Home Science" },
+        { value: "All Subject", label: "All Subject" },
       ];
     } else if (selectedStream === "Commerce") {
       return [
