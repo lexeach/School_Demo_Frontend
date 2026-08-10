@@ -194,3 +194,4 @@ export const API_GET_LEARNING_VERIFICATION = (
 
 export const API_SUBMIT_LEARNING_VERIFICATION =
   "/api/learning-verification/submit";
+export const API_BULK_UPLOAD_USERS = "/api/users/bulk-upload";
