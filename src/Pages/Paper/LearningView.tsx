@@ -807,9 +807,13 @@ resourceCache.setItem(
 // Update UI
 //--------------------------------------------------
 
-setBrowserVideos(videos);
+setBrowserVideos(
+    SHOW_VIDEO ? videos : []
+);
 
-setBrowserPdfs(pdfs);
+setBrowserPdfs(
+    SHOW_PDF ? pdfs : []
+);
 
 if (SHOW_VIDEO && videos.length > 0) {
 
