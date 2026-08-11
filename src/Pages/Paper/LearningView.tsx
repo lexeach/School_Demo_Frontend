@@ -92,14 +92,21 @@ const [completedQuestions, setCompletedQuestions] =
 //====================================================
 
 const [browserVideos, setBrowserVideos] =
-  useState<any[]>([]);
+    useState<any[]>([]);
 
 const [browserPdfs, setBrowserPdfs] =
-  useState<any[]>([]);
+    useState<any[]>([]);
+
+// ====================================================
+// Browser Learning Resources
+// ====================================================
+// false = completely disabled
+// true  = enabled
+const SHOW_VIDEO = false;
+const SHOW_PDF = false;
 
 const resourceCache =
     sessionStorage;
-
   const {
 
     videoPlayerRef,
@@ -585,26 +592,41 @@ if (
 
 const loadBrowserResources = async () => {
 
+    // ====================================================
+    // Video and PDF resources are currently disabled
+    // ====================================================
+
+    if (!SHOW_VIDEO && !SHOW_PDF) {
+
+        setLoadingResources(false);
+
+        setBrowserVideos([]);
+
+        setBrowserPdfs([]);
+
+        setSelectedVideo(null);
+
+        setSelectedPdf(null);
+
+        return;
+    }
+
     if (!learningData?.data) {
 
         console.log("Learning data not ready yet");
 
         return;
-
     }
-console.log("========== loadBrowserResources ==========");
-console.log("learningData =", learningData);
-    if (!learningData?.data) {
-    setLoadingResources(false);
-    return;
-}
+
+    console.log("========== loadBrowserResources ==========");
+    console.log("learningData =", learningData);
 
     try {
 
         setLoadingResources(true);
 
-       const query =
-    learningData.data.videoSearchQuery || "";
+        const query =
+            learningData.data.videoSearchQuery || "";
       // Already loaded? Don't reload.
 if (
     browserVideos.length > 0 &&
@@ -710,51 +732,57 @@ if (
 
 let videos: any[] = [];
 
-try {
+if (SHOW_VIDEO && query) {
 
-    const videoResponse = await api.get("/youtube/search", {
-        params: {
-            q: query,
-        },
-    });
+    try {
 
-    videos = videoResponse?.data?.videos || [];
+        const videoResponse = await api.get("/youtube/search", {
+            params: {
+                q: query,
+            },
+        });
 
-} catch (err) {
+        videos = videoResponse?.data?.videos || [];
 
-    console.error("Video Search Error", err);
+    } catch (err) {
 
-    videos = [];
+        console.error("Video Search Error", err);
+
+        videos = [];
+
+    }
 
 }
-
 //--------------------------------------------------
 // PDF Search
 //--------------------------------------------------
 
 let pdfs: any[] = [];
 
-try {
+if (SHOW_PDF && query) {
 
-    const pdfResponse = await api.get("/pdf/search", {
-        params: {
-            query:
-                learningData?.data?.pdfSearchQuery ||
-                learningData?.data?.videoSearchQuery ||
-                query,
-        },
-    });
+    try {
 
-    pdfs = pdfResponse?.data?.pdfs || [];
+        const pdfResponse = await api.get("/pdf/search", {
+            params: {
+                query:
+                    learningData?.data?.pdfSearchQuery ||
+                    learningData?.data?.videoSearchQuery ||
+                    query,
+            },
+        });
 
-} catch (err) {
+        pdfs = pdfResponse?.data?.pdfs || [];
 
-    console.error("PDF Search Error", err);
+    } catch (err) {
 
-    pdfs = [];
+        console.error("PDF Search Error", err);
+
+        pdfs = [];
+
+    }
 
 }
-
 //--------------------------------------------------
 // Sort PDFs
 //--------------------------------------------------
@@ -783,7 +811,7 @@ setBrowserVideos(videos);
 
 setBrowserPdfs(pdfs);
 
-if (videos.length > 0) {
+if (SHOW_VIDEO && videos.length > 0) {
 
     setIframeReady(false);
 
@@ -792,13 +820,6 @@ if (videos.length > 0) {
     setPlayingVideo(videos[0]);
 
 }
-if (videos.length > 0) {
-setIframeReady(false);
-    setSelectedVideo(videos[0].videoId);
-setPlayingVideo(videos[0]);
-
-}
-
     }
 
     catch (error) {
