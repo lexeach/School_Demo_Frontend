@@ -402,57 +402,33 @@ Please wait...
 
 )}
 
-{loadingResources && (
+{false && loadingResources && (
 
 <div
-
-className="
-
-rounded-xl
-
-border
-
-bg-blue-50
-
-p-4
-
-text-center
-
-"
-
+    className="
+    rounded-xl
+    border
+    bg-blue-50
+    p-4
+    text-center
+    "
 >
 
-<div
+    <div
+        className="
+        animate-spin
+        rounded-full
+        h-8
+        w-8
+        border-b-2
+        border-blue-600
+        mx-auto
+        "
+    />
 
-className="
-
-animate-spin
-
-rounded-full
-
-h-8
-
-w-8
-
-border-b-2
-
-border-blue-600
-
-mx-auto
-
-"
-
-/>
-
-<p
-
-className="mt-3"
-
->
-
-Searching Videos & PDFs...
-
-</p>
+    <p className="mt-3">
+        Searching Videos & PDFs...
+    </p>
 
 </div>
 
