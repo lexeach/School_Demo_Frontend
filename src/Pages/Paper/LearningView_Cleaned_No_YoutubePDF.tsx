@@ -433,6 +433,7 @@ const PaperView = () => {
 
                     return (
                       <LearningAccordion
+                        paperId={String(id)}
                         question={question}
                         openAccordion={openAccordion}
                         setOpenAccordion={setOpenAccordion}

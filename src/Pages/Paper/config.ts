@@ -102,8 +102,8 @@ const dynamicSubjectOptions = {
     { value: "Chemistry Part 1", label: "Chemistry Part 1" },
     { value: "Chemistry Part 2", label: "Chemistry Part 2" },
     { value: "Biology", label: "Biology" },
-    { value: "Sanskrit Bhaswati", label: "Sanskrit Bhaswati" },
-    { value: "Sanskrit Shashwati", label: "Sanskrit Shashwati" },
+    //{ value: "Sanskrit Bhaswati", label: "Sanskrit Bhaswati" },
+    //{ value: "Sanskrit Shashwati", label: "Sanskrit Shashwati" },
     { value: "Psychology", label: "Psychology" },
     { value: "Biotechnology", label: "Biotechnology" },
     {
@@ -150,7 +150,7 @@ const dynamicSubjectOptions = {
       label: "Economics Statistics for Economics",
     },
     { value: "Business Studies", label: "Business Studies" },
-    { value: "Urdu", label: "Urdu" },
+    //{ value: "Urdu", label: "Urdu" },
     {
       value: "Home Science Human Ecology and Family Sciences Part 1",
       label: "Home Science Human Ecology and Family Sciences Part 1",

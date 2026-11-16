@@ -102,7 +102,7 @@ export default function Login() {
            <UIButton
                 variant="link"
                     className="p-0"
-                    onClick={() => navigate("/register")}
+                    onClick={() => navigate("/auth/register")}
                    // OR for a direct redirect in the same tab:
                      // onClick={() => window.location.href = "https://user.exowa.click/registration"}
                         >

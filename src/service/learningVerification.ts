@@ -3,6 +3,9 @@ import {
   API_GENERATE_LEARNING_VERIFICATION,
   API_GET_LEARNING_VERIFICATION,
   API_SUBMIT_LEARNING_VERIFICATION,
+  API_R3_GENERATE,
+  API_R3_VERIFY,
+  API_R3_EXPAND,
 } from "@/config/url-constants";
 
 import baseQuery from "./baseQuery";
@@ -38,6 +41,19 @@ export const learningVerificationApi = createApi({
       invalidatesTags: ["LearningVerification"],
     }),
 
+    generateR3Factor: builder.mutation({
+      query: (body) => ({ url: API_R3_GENERATE, method: "POST", body }),
+      invalidatesTags: ["LearningVerification"],
+    }),
+    submitR3FactorVerification: builder.mutation({
+      query: (body) => ({ url: API_R3_VERIFY, method: "POST", body }),
+      invalidatesTags: ["LearningVerification"],
+    }),
+    expandR3Factor: builder.mutation({
+      query: (body) => ({ url: API_R3_EXPAND, method: "POST", body }),
+      invalidatesTags: ["LearningVerification"],
+    }),
+
     /**
      * Get Verification Status
      */
@@ -60,4 +76,7 @@ export const {
   useSubmitLearningVerificationMutation,
   useGetLearningVerificationQuery,
   useLazyGetLearningVerificationQuery,
+  useGenerateR3FactorMutation,
+  useSubmitR3FactorVerificationMutation,
+  useExpandR3FactorMutation,
 } = learningVerificationApi;

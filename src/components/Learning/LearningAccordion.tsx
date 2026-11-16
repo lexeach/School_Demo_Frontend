@@ -6,12 +6,9 @@ import {
 } from "@/components/ui/accordion";
 
 import UIButton from "@/UI/Elements/Button";
-
-import {
-
-    BookOpen,
-
-} from "lucide-react";
+import { useState } from "react";
+import { BookOpen, Network } from "lucide-react";
+import R3FactorDialog from "@/components/L3_R3FactorDialog";
 
 import ExplanationSection
 from "./ExplanationSection";
@@ -29,6 +26,7 @@ from "./LearningVideoPlayer";
 interface Props {
 
     question:any;
+    paperId:string;
 
     openAccordion:string;
 
@@ -70,9 +68,9 @@ interface Props {
 
     setVerificationQuestion:any;
 
-    resourceCache:any;
+    resourceCache?:any;
 
-    loadBrowserResources:any;
+    loadBrowserResources?:any;
 
 }
 
@@ -80,6 +78,7 @@ interface Props {
 export default function LearningAccordion({
 
     question,
+    paperId,
 
     openAccordion,
 
@@ -126,6 +125,7 @@ export default function LearningAccordion({
     loadBrowserResources,
 
 }:Props){
+const [r3Open, setR3Open] = useState(false);
 
 return(
 
@@ -384,22 +384,37 @@ Please wait...
 
 
 {!waitingForExplanation && (
-
-    <div className="pt-3">
+  <>
+    <div className="pt-3 flex flex-wrap gap-2">
 
         <UIButton
-    variant="sky"
-    className="w-full md:w-auto"
-    onClick={() => {
-        setVerificationQuestion(question);
-        setVerificationOpen(true);
-    }}
->
-    I Learnt
-</UIButton>
+          variant="sky"
+          className="w-full md:w-auto"
+          onClick={() => {
+            setVerificationQuestion(question);
+            setVerificationOpen(true);
+          }}
+        >
+          I Learnt
+        </UIButton>
+
+        <UIButton
+          variant="secondary"
+          className="w-full md:w-auto"
+          onClick={() => setR3Open(true)}
+        >
+          <Network size={16} className="mr-2" /> R3 Factor
+        </UIButton>
 
     </div>
 
+    <R3FactorDialog
+      open={r3Open}
+      onClose={() => setR3Open(false)}
+      paperId={paperId}
+      questionNumber={Number(question.questionNumber)}
+    />
+  </>
 )}
 
 {false && loadingResources && (
