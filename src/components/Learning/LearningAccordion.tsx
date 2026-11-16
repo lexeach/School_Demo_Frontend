@@ -412,7 +412,7 @@ Please wait...
       open={r3Open}
       onClose={() => setR3Open(false)}
       paperId={paperId}
-      questionId={String(question?._id || "")}
+      questionId={String(question?.questionNumber ?? "")}
       questionNumber={Number(question.questionNumber)}
     />
   </>

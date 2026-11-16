@@ -101,7 +101,7 @@ export default function R3FactorDialog({ open, onClose, paperId, questionId, que
   return <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
     <DialogContent className="w-[96vw] max-w-3xl max-h-[90vh] overflow-y-auto">
       <DialogHeader><DialogTitle className="flex items-center gap-2"><Network size={20}/> R3 Factor – {data?.topic || "Analysing question"}</DialogTitle></DialogHeader>
-      {!questionId && <div className="rounded-lg bg-red-50 text-red-700 p-3 text-sm">This question has no existing MongoDB question ID. R3 will not create or modify an ID.</div>}
+      {!questionId && <div className="rounded-lg bg-red-50 text-red-700 p-3 text-sm">This question has no valid question number. R3 cannot identify this question.</div>}
       {isLoading && !data ? <div className="py-12 text-center"><Loader2 className="animate-spin mx-auto"/> <p className="mt-3 text-sm text-slate-500">AI is identifying the topic and preparing root-factor verification sets. This may take a moment.</p></div> : null}
       {error && <div className="rounded-lg bg-red-50 text-red-700 p-3 text-sm">{error}</div>}
       {data && <>
