@@ -435,7 +435,6 @@ const PaperView = () => {
                       <LearningAccordion
                         paperId={String(id)}
                         question={question}
-                        questionNumber={Number(question.questionNumber) || questionIndex + 1}
                         openAccordion={openAccordion}
                         setOpenAccordion={setOpenAccordion}
                         handleLearning={handleLearning}
