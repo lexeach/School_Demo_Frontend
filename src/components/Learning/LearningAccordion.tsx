@@ -135,7 +135,7 @@ const [generateR3, { isLoading: r3Loading }] = useGenerateR3FactorMutation();
 // relying on a dialog lifecycle effect to start the API request.
 const handleOpenR3 = async () => {
     const currentPaperId = String(paperId || "").trim();
-    const currentQuestionNumber = Number(question?.questionNumber ?? questionNumber);
+    const currentQuestionNumber = Number(question?.questionNumber);
     if (!currentPaperId || !Number.isInteger(currentQuestionNumber) || currentQuestionNumber < 1) {
         setR3Data(null);
         setR3Error("Question reference is missing. Please close and reopen this question.");
@@ -448,8 +448,8 @@ Please wait...
       open={r3Open}
       onClose={() => setR3Open(false)}
       paperId={paperId}
-      questionId={String(question?.questionNumber ?? questionNumber ?? "")}
-      questionNumber={Number(question?.questionNumber ?? questionNumber)}
+      questionId={String(question?.questionNumber ?? "")}
+      questionNumber={Number(question?.questionNumber)}
       data={r3Data}
       isGenerating={r3Loading}
       error={r3Error}

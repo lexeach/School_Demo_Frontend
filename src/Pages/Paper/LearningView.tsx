@@ -1063,6 +1063,7 @@ if (SHOW_VIDEO && videos.length > 0) {
                       <LearningAccordion
 
     question={question}
+    paperId={String(id || "")}
 
     openAccordion={openAccordion}
 
