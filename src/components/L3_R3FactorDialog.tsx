@@ -40,51 +40,67 @@ export default function R3FactorDialog({ open, onClose, paperId, questionId, que
     finally { setBusyFactor(""); }
   };
 
-  const renderFactor = (factor: Factor, depth = 0): any => (
-    <div key={factor.factorId} className="rounded-xl border bg-white p-4 space-y-3" style={{ marginLeft: Math.min(depth * 12, 36) }}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="font-semibold text-slate-800">{factor.name}</div>
-          {factor.description && <p className="text-sm text-slate-600 mt-1">{factor.description}</p>}
+  // Render factors as a familiar text tree. The original learning and
+  // verification controls remain attached to each corresponding factor.
+  const renderFactor = (factor: Factor, prefix = "", isLast = true, depth = 0): any => {
+    const branch = isLast ? "└──" : "├──";
+    const childPrefix = `${prefix}${isLast ? "    " : "│   "}`;
+    const hasChildren = Boolean(factor.children?.length);
+
+    return (
+      <div key={factor.factorId} className="space-y-2">
+        <div className="flex items-start gap-2 min-w-0 py-1">
+          <span className="font-mono text-slate-400 whitespace-pre shrink-0 select-none">{prefix}{branch}</span>
+          <div className="min-w-0 flex-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="font-semibold text-slate-900">{factor.name}</span>
+            {factor.effectiveVerified
+              ? <span className="text-green-700 text-xs font-semibold inline-flex items-center gap-1"><CheckCircle2 size={15}/> Verified</span>
+              : <span className="text-amber-700 text-xs font-semibold inline-flex items-center gap-1"><CircleAlert size={15}/> Not verified</span>}
+          </div>
         </div>
-        {factor.effectiveVerified
-          ? <span className="text-green-700 text-sm font-semibold flex items-center gap-1"><CheckCircle2 size={17}/> Verified</span>
-          : <span className="text-amber-700 text-sm font-semibold flex items-center gap-1"><CircleAlert size={17}/> Not verified</span>}
-      </div>
-      {!factor.effectiveVerified && (!factor.children || factor.children.length === 0) && (
-        <div className="rounded-lg bg-slate-50 p-3 space-y-3">
-          <div className="flex gap-2 items-center font-medium text-sm"><BookOpen size={16}/> Learning content</div>
-          <p className="text-sm text-slate-700 whitespace-pre-wrap">{factor.learningContent || factor.description || "Review this concept carefully."}</p>
-          <div className="font-medium text-sm flex items-center gap-2"><ClipboardCheck size={16}/> Verification (3 questions)</div>
-          {(factor.verificationQuestions || []).map((q, i) => (
-            <div key={i} className="border-t pt-3 space-y-2">
-              <p className="text-sm font-medium">{i + 1}. {q.question}</p>
-              {q.options.map((option, j) => {
-                const value = String.fromCharCode(65 + j);
-                const selected = (answers[factor.factorId] || [])[i] === value;
-                return <label key={j} className="flex gap-2 items-start text-sm cursor-pointer">
-                  <input type="radio" name={`${factor.factorId}-${i}`} checked={selected} onChange={() => setAnswers(prev => {
-                    const next = [...(prev[factor.factorId] || ["", "", ""])];
-                    next[i] = value; return { ...prev, [factor.factorId]: next };
-                  })}/>
-                  <span>{value}. {option}</span>
-                </label>;
-              })}
-            </div>
-          ))}
-          <UIButton variant="sky" className="w-full" disabled={(answers[factor.factorId] || []).length !== 3 || (answers[factor.factorId] || []).some(x => !x)} onClick={() => submitFactor(factor)}>
-            {submitting && busyFactor === factor.factorId ? "Submitting..." : "Submit verification"}
-          </UIButton>
-          {factor.canExploreFurther && (
-            <UIButton variant="secondary" className="w-full" disabled={expanding && busyFactor === factor.factorId} onClick={() => expandFactor(factor)}>
-              {expanding && busyFactor === factor.factorId ? "Generating..." : "Explore Further"}
+
+        {factor.description && <p className="text-sm text-slate-600 ml-8">{factor.description}</p>}
+
+        {!factor.effectiveVerified && !hasChildren && (
+          <div className="ml-8 rounded-lg bg-slate-50 border border-slate-100 p-3 space-y-3">
+            <div className="flex gap-2 items-center font-medium text-sm"><BookOpen size={16}/> Learning content</div>
+            <p className="text-sm text-slate-700 whitespace-pre-wrap">{factor.learningContent || factor.description || "Review this concept carefully."}</p>
+            <div className="font-medium text-sm flex items-center gap-2"><ClipboardCheck size={16}/> Verification (3 questions)</div>
+            {(factor.verificationQuestions || []).map((q, i) => (
+              <div key={i} className="border-t pt-3 space-y-2">
+                <p className="text-sm font-medium">{i + 1}. {q.question}</p>
+                {q.options.map((option, j) => {
+                  const value = String.fromCharCode(65 + j);
+                  const selected = (answers[factor.factorId] || [])[i] === value;
+                  return <label key={j} className="flex gap-2 items-start text-sm cursor-pointer">
+                    <input type="radio" name={`${factor.factorId}-${i}`} checked={selected} onChange={() => setAnswers(prev => {
+                      const next = [...(prev[factor.factorId] || ["", "", ""] )];
+                      next[i] = value; return { ...prev, [factor.factorId]: next };
+                    })}/>
+                    <span>{value}. {option}</span>
+                  </label>;
+                })}
+              </div>
+            ))}
+            <UIButton variant="sky" className="w-full" disabled={(answers[factor.factorId] || []).length !== 3 || (answers[factor.factorId] || []).some(x => !x)} onClick={() => submitFactor(factor)}>
+              {submitting && busyFactor === factor.factorId ? "Submitting..." : "Submit verification"}
             </UIButton>
-          )}
-        </div>
-      )}
-      {factor.children?.length > 0 && <div className="space-y-2 border-l-2 border-indigo-100 pl-3">{factor.children.map(child => renderFactor(child, depth + 1))}</div>}
-    </div>
-  );
+            {factor.canExploreFurther && (
+              <UIButton variant="secondary" className="w-full" disabled={expanding && busyFactor === factor.factorId} onClick={() => expandFactor(factor)}>
+                {expanding && busyFactor === factor.factorId ? "Generating..." : "Explore Further"}
+              </UIButton>
+            )}
+          </div>
+        )}
+
+        {hasChildren && (
+          <div className="space-y-2">
+            {factor.children.map((child, index) => renderFactor(child, childPrefix, index === factor.children.length - 1, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
     <DialogContent className="w-[96vw] max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -99,7 +115,11 @@ export default function R3FactorDialog({ open, onClose, paperId, questionId, que
           <div className="text-lg font-bold text-indigo-950">{data.topic}</div>
           <div className="text-sm text-indigo-800 mt-1">Secondary Factor: {data.secondaryFactor}</div>
         </div>
-        <div className="space-y-3">{(data.factors || []).map((factor: Factor) => renderFactor(factor))}</div>
+        <div className="rounded-xl border bg-white p-4 space-y-3">
+          <div className="font-mono font-semibold text-slate-900">└── R3 Structure</div>
+          <div className="font-mono text-sm text-slate-400 pl-4">│</div>
+          <div className="space-y-3">{(data.factors || []).map((factor: Factor, index: number, list: Factor[]) => renderFactor(factor, "    ", index === list.length - 1))}</div>
+        </div>
       </>}
       <div className="flex justify-end"><UIButton variant="secondary" onClick={onClose}>Close</UIButton></div>
     </DialogContent>
