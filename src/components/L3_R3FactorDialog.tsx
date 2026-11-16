@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import UIButton from "@/UI/Elements/Button";
-import { useGenerateR3FactorMutation, useSubmitR3FactorVerificationMutation, useExpandR3FactorMutation } from "@/service/learningVerification";
+import { useSubmitR3FactorVerificationMutation, useExpandR3FactorMutation } from "@/service/learningVerification";
 import { CheckCircle2, CircleAlert, Network, Loader2, BookOpen, ClipboardCheck } from "lucide-react";
 
 type Factor = {
@@ -11,27 +11,15 @@ type Factor = {
   score?: number | null;
 };
 
-export default function R3FactorDialog({ open, onClose, paperId, questionNumber }: {
+export default function R3FactorDialog({ open, onClose, paperId, questionNumber, data, isGenerating, error: generationError, onRetry }: {
   open: boolean; onClose: () => void; paperId: string; questionNumber: number;
+  data: any; isGenerating: boolean; error: string; onRetry: () => void;
 }) {
-  const [generate, { isLoading }] = useGenerateR3FactorMutation();
   const [submit, { isLoading: submitting }] = useSubmitR3FactorVerificationMutation();
   const [expand, { isLoading: expanding }] = useExpandR3FactorMutation();
-  const [data, setData] = useState<any>(null);
   const [answers, setAnswers] = useState<Record<string, string[]>>({});
   const [busyFactor, setBusyFactor] = useState("");
   const [error, setError] = useState("");
-
-  const load = async () => {
-    setError("");
-    try {
-      const response: any = await generate({ paperId, questionNumber }).unwrap();
-      setData(response.data || response);
-    } catch (e: any) {
-      setError(e?.data?.message || e?.message || "Unable to load R3 Factor.");
-    }
-  };
-  useEffect(() => { if (open && paperId && questionNumber) { setData(null); load(); } }, [open, paperId, questionNumber]);
 
   const submitFactor = async (factor: Factor) => {
     const selected = answers[factor.factorId] || [];
@@ -39,7 +27,7 @@ export default function R3FactorDialog({ open, onClose, paperId, questionNumber 
     setBusyFactor(factor.factorId); setError("");
     try {
       await submit({ paperId, questionNumber, factorId: factor.factorId, answers: selected }).unwrap();
-      await load();
+      onRetry();
     } catch (e: any) { setError(e?.data?.message || "Verification submission failed."); }
     finally { setBusyFactor(""); }
   };
@@ -47,7 +35,7 @@ export default function R3FactorDialog({ open, onClose, paperId, questionNumber 
     setBusyFactor(factor.factorId); setError("");
     try {
       await expand({ paperId, questionNumber, factorId: factor.factorId }).unwrap();
-      await load();
+      onRetry();
     } catch (e: any) { setError(e?.data?.message || "Unable to generate deeper factors."); }
     finally { setBusyFactor(""); }
   };
@@ -101,8 +89,10 @@ export default function R3FactorDialog({ open, onClose, paperId, questionNumber 
   return <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
     <DialogContent className="w-[96vw] max-w-3xl max-h-[90vh] overflow-y-auto">
       <DialogHeader><DialogTitle className="flex items-center gap-2"><Network size={20}/> R3 Factor – {data?.topic || "Analysing question"}</DialogTitle></DialogHeader>
-      {isLoading && !data ? <div className="py-12 text-center"><Loader2 className="animate-spin mx-auto"/> <p className="mt-3 text-sm text-slate-500">AI is identifying the topic and preparing root-factor verification sets. This may take a moment.</p></div> : null}
-      {error && <div className="rounded-lg bg-red-50 text-red-700 p-3 text-sm">{error}</div>}
+      {(isGenerating && !data) ? <div className="py-12 text-center"><Loader2 className="animate-spin mx-auto"/> <p className="mt-3 text-sm text-slate-500">AI is identifying the topic and preparing root-factor verification sets. This may take a moment.</p></div> : null}
+      {(generationError || error) && <div className="rounded-lg bg-red-50 text-red-700 p-3 text-sm">{generationError || error}
+        {!isGenerating && <button type="button" className="ml-2 underline font-semibold" onClick={onRetry}>Retry</button>}
+      </div>}
       {data && <>
         <div className="rounded-xl bg-indigo-50 p-4">
           <div className="text-xs uppercase tracking-wide text-indigo-600 font-semibold">AI identified topic</div>

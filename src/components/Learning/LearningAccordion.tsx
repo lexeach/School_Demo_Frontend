@@ -7,6 +7,7 @@ import {
 
 import UIButton from "@/UI/Elements/Button";
 import { useState } from "react";
+import { useGenerateR3FactorMutation } from "@/service/learningVerification";
 import { BookOpen, Network } from "lucide-react";
 import R3FactorDialog from "@/components/L3_R3FactorDialog";
 
@@ -126,6 +127,43 @@ export default function LearningAccordion({
 
 }:Props){
 const [r3Open, setR3Open] = useState(false);
+const [r3Data, setR3Data] = useState<any>(null);
+const [r3Error, setR3Error] = useState("");
+const [generateR3, { isLoading: r3Loading }] = useGenerateR3FactorMutation();
+
+const handleOpenR3 = async () => {
+    const currentPaperId = String(paperId || "").trim();
+    const currentQuestionNumber = Number(question?.questionNumber);
+
+    if (!currentPaperId || !Number.isInteger(currentQuestionNumber) || currentQuestionNumber < 1) {
+        setR3Error("Question reference is missing. Please close and reopen this question.");
+        setR3Data(null);
+        setR3Open(true);
+        return;
+    }
+
+    setR3Open(true);
+    setR3Data(null);
+    setR3Error("");
+
+    try {
+        const response: any = await generateR3({
+            paperId: currentPaperId,
+            questionNumber: currentQuestionNumber,
+        }).unwrap();
+
+        setR3Data(response?.data || response);
+    } catch (error: any) {
+        console.error("R3 Factor generation failed:", error);
+        setR3Error(
+            error?.data?.message ||
+            error?.data?.error ||
+            error?.error ||
+            error?.message ||
+            "Unable to generate R3 Factor. Please try again."
+        );
+    }
+};
 
 return(
 
@@ -401,7 +439,7 @@ Please wait...
         <UIButton
           variant="secondary"
           className="w-full md:w-auto"
-          onClick={() => setR3Open(true)}
+          onClick={handleOpenR3}
         >
           <Network size={16} className="mr-2" /> R3 Factor
         </UIButton>
@@ -413,6 +451,10 @@ Please wait...
       onClose={() => setR3Open(false)}
       paperId={paperId}
       questionNumber={Number(question.questionNumber)}
+      data={r3Data}
+      isGenerating={r3Loading}
+      error={r3Error}
+      onRetry={handleOpenR3}
     />
   </>
 )}
