@@ -75,7 +75,8 @@ export default function R3FactorDialog({
   const [selectedFactorId, setSelectedFactorId] = useState<string | null>(null);
   const [busyFactor, setBusyFactor] = useState("");
   const [error, setError] = useState("");
-  const [showLearning, setShowLearning] = useState(true);
+  const [activeTab, setActiveTab] = useState<"selected" | "learning" | "verification">("selected");
+  const [currentVerificationQuestion, setCurrentVerificationQuestion] = useState(0);
 
   const allFactors = useMemo(() => collectFactors(data?.factors || []), [data?.factors]);
   const selectedFactor = allFactors.find((factor) => factor.factorId === selectedFactorId) || null;
@@ -98,7 +99,7 @@ export default function R3FactorDialog({
       setAnswers({});
       setLocalResults({});
       setError("");
-      setShowLearning(true);
+      setActiveTab("selected");
     }
   }, [open, data?._id, data?.topic]);
 
@@ -132,8 +133,9 @@ export default function R3FactorDialog({
 
   const selectFactor = (factor: Factor) => {
     setSelectedFactorId(factor.factorId);
+    setCurrentVerificationQuestion(0);
     setError("");
-    setShowLearning(true);
+    setActiveTab("selected");
   };
 
   const submitFactor = async (factor: Factor) => {
@@ -181,6 +183,7 @@ export default function R3FactorDialog({
   const navigateIntoFactor = async (factor: Factor) => {
     setError("");
     setSelectedFactorId(null);
+    setCurrentVerificationQuestion(0);
 
     if (factor.children?.length) {
       setNavigationIds((previous) => [...previous, factor.factorId]);
@@ -210,6 +213,7 @@ export default function R3FactorDialog({
   const goBackToLevel = (index: number) => {
     setNavigationIds((previous) => previous.slice(0, index));
     setSelectedFactorId(null);
+    setCurrentVerificationQuestion(0);
     setError("");
   };
 
@@ -227,7 +231,8 @@ export default function R3FactorDialog({
     const parentPath = findPath(data?.factors || [], nextRecommendedFactor.factorId) || [];
     setNavigationIds(parentPath);
     setSelectedFactorId(nextRecommendedFactor.factorId);
-    setShowLearning(true);
+    setCurrentVerificationQuestion(0);
+    setActiveTab("selected");
     setError("");
   };
 
@@ -311,7 +316,6 @@ export default function R3FactorDialog({
                             className="w-full min-w-0 flex items-start justify-between gap-2 text-left">
                             <span className="min-w-0 flex-1">
                               <span className="block text-sm font-semibold text-slate-900">{factor.name}</span>
-                              {factor.description && <span className="block text-xs text-slate-500 mt-1 line-clamp-2">{factor.description}</span>}
                             </span>
                             <span className="shrink-0 pt-0.5">{renderStatus(factor, true)}</span>
                           </button>
@@ -341,72 +345,137 @@ export default function R3FactorDialog({
                 ) : (
                   <section className="rounded-xl border bg-white p-4 space-y-4" aria-live="polite">
                     <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div className="min-w-0"><div className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Selected factor</div><h3 className="text-lg font-bold text-slate-900">{selectedFactor.name}</h3>
-                        {selectedFactor.description && <p className="text-sm text-slate-600 mt-1">{selectedFactor.description}</p>}
-                      </div>
+                      <div className="min-w-0"><div className="text-xs uppercase tracking-wide text-slate-500 font-semibold">R3 factor details</div><h3 className="text-lg font-bold text-slate-900">{selectedFactor.name}</h3></div>
                       {renderStatus(selectedFactor)}
                     </div>
 
-                    {selectedResult && (
-                      <div className={`rounded-lg p-3 text-sm ${selectedResult.score === selectedResult.totalQuestions ? "bg-green-50 text-green-800" : "bg-amber-50 text-amber-800"}`}>
-                        <div className="font-semibold">{selectedResult.score === selectedResult.totalQuestions ? "Excellent! Factor verification passed." : "This factor needs more practice."}</div>
-                        <div>{selectedResult.score}/{selectedResult.totalQuestions} correct answers.</div>
-                      </div>
-                    )}
-
-                    <div className="rounded-lg bg-slate-50 p-3 space-y-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="font-medium text-sm flex items-center gap-2"><BookOpen size={16} /> Learning content</div>
-                        <button type="button" className="text-xs text-blue-700 font-semibold" onClick={() => setShowLearning((value) => !value)}>{showLearning ? "Hide" : "Review"}</button>
-                      </div>
-                      {showLearning && <p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedFactor.learningContent || selectedFactor.description || "Review this concept carefully."}</p>}
+                    <div role="tablist" aria-label="Factor details" className="grid grid-cols-3 gap-1 rounded-lg bg-slate-100 p-1">
+                      <button type="button" role="tab" aria-selected={activeTab === "selected"} onClick={() => setActiveTab("selected")}
+                        className={`rounded-md px-2 py-2 text-xs sm:text-sm font-semibold transition-colors ${activeTab === "selected" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}>
+                        Selected factor
+                      </button>
+                      <button type="button" role="tab" aria-selected={activeTab === "learning"} onClick={() => setActiveTab("learning")}
+                        className={`rounded-md px-2 py-2 text-xs sm:text-sm font-semibold transition-colors ${activeTab === "learning" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}>
+                        Learning content
+                      </button>
+                      <button type="button" role="tab" aria-selected={activeTab === "verification"} onClick={() => setActiveTab("verification")}
+                        className={`rounded-md px-2 py-2 text-xs sm:text-sm font-semibold transition-colors ${activeTab === "verification" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}>
+                        Verification
+                      </button>
                     </div>
 
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between gap-2"><div className="font-medium text-sm flex items-center gap-2"><ClipboardCheck size={16} /> Verification</div><span className="text-xs text-slate-500">{(selectedFactor.verificationQuestions || []).length} questions · 3/3 to pass</span></div>
-                      {(selectedFactor.verificationQuestions || []).map((question, index) => (
-                        <div key={`${selectedFactor.factorId}-${index}`} className="border-t pt-3 space-y-2">
-                          <p className="text-sm font-medium">{index + 1}. {question.question}</p>
-                          {(question.options || []).map((option, optionIndex) => {
-                            const value = String.fromCharCode(65 + optionIndex);
-                            const isChecked = (answers[selectedFactor.factorId] || [])[index] === value;
-                            return <label key={optionIndex} className="flex gap-2 items-start text-sm cursor-pointer rounded-md p-1 hover:bg-slate-50">
-                              <input type="radio" name={`${selectedFactor.factorId}-${index}`} checked={isChecked} onChange={() => setAnswers((previous) => {
-                                const next = [...(previous[selectedFactor.factorId] || Array((selectedFactor.verificationQuestions || []).length).fill(""))];
-                                next[index] = value;
-                                return { ...previous, [selectedFactor.factorId]: next };
-                              })} />
-                              <span>{value}. {option}</span>
-                            </label>;
-                          })}
+                    {activeTab === "selected" && (
+                      <div role="tabpanel" className="space-y-4">
+                        <div className="rounded-lg bg-slate-50 p-4 space-y-2">
+                          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Factor overview</div>
+                          <p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedFactor.description || "No additional description is available for this factor."}</p>
+                          <div className="pt-1">{renderStatus(selectedFactor)}</div>
                         </div>
-                      ))}
-                    </div>
-
-                    <UIButton variant="sky" className="w-full" disabled={submitting || (answers[selectedFactor.factorId] || []).length !== (selectedFactor.verificationQuestions || []).length || (answers[selectedFactor.factorId] || []).some((answer) => !answer)} onClick={() => submitFactor(selectedFactor)}>
-                      {submitting && busyFactor === selectedFactor.factorId ? "Submitting..." : "Submit verification"}
-                    </UIButton>
-
-                    {(selectedFactor.children?.length > 0 || selectedFactor.canExploreFurther) && (
-                      <UIButton variant="secondary" className="w-full" disabled={expanding || busyFactor === selectedFactor.factorId} onClick={() => navigateIntoFactor(selectedFactor)}>
-                        {busyFactor === selectedFactor.factorId ? "Preparing next level..." : selectedFactor.children?.length ? `View ${selectedFactor.children.length} primary factors` : "Explore Further – identify primary factors"}
-                      </UIButton>
-                    )}
-
-                    {selectedResult && selectedResult.score === selectedResult.totalQuestions && nextRecommendedFactor && (
-                      <div className="rounded-lg border border-green-200 bg-green-50 p-3 space-y-2">
-                        <div className="text-sm font-semibold text-green-900 flex items-center gap-2"><CheckCircle2 size={16}/> Factor mastered</div>
-                        <p className="text-xs text-green-800">Recommended next: {nextRecommendedFactor.name}. You can continue now or choose any other factor from the tree.</p>
-                        <UIButton variant="sky" className="w-full" onClick={handleExploreAnother}>Continue to {nextRecommendedFactor.name} <ArrowRight size={16}/></UIButton>
-                        <button type="button" onClick={() => setSelectedFactorId(null)} className="w-full text-xs text-green-800 underline">Return to R3 tree and choose another factor</button>
+                        {selectedResult && (
+                          <div className={`rounded-lg p-3 text-sm ${selectedResult.score === selectedResult.totalQuestions ? "bg-green-50 text-green-800" : "bg-amber-50 text-amber-800"}`}>
+                            <div className="font-semibold">{selectedResult.score === selectedResult.totalQuestions ? "Excellent! Factor verification passed." : "This factor needs more practice."}</div>
+                            <div>{selectedResult.score}/{selectedResult.totalQuestions} correct answers.</div>
+                          </div>
+                        )}
+                        {(selectedFactor.children?.length > 0 || selectedFactor.canExploreFurther) && (
+                          <UIButton variant="secondary" className="w-full" disabled={expanding || busyFactor === selectedFactor.factorId} onClick={() => navigateIntoFactor(selectedFactor)}>
+                            {busyFactor === selectedFactor.factorId ? "Preparing next level..." : selectedFactor.children?.length ? `View ${selectedFactor.children.length} primary factors` : "Explore Further – identify primary factors"}
+                          </UIButton>
+                        )}
+                        {selectedResult && selectedResult.score === selectedResult.totalQuestions && nextRecommendedFactor && (
+                          <div className="rounded-lg border border-green-200 bg-green-50 p-3 space-y-2">
+                            <div className="text-sm font-semibold text-green-900 flex items-center gap-2"><CheckCircle2 size={16}/> Factor mastered</div>
+                            <p className="text-xs text-green-800">Recommended next: {nextRecommendedFactor.name}. You can continue now or choose any other factor from the explorer.</p>
+                            <UIButton variant="sky" className="w-full" onClick={handleExploreAnother}>Continue to {nextRecommendedFactor.name} <ArrowRight size={16}/></UIButton>
+                            <button type="button" onClick={() => setSelectedFactorId(null)} className="w-full text-xs text-green-800 underline">Return to R3 tree and choose another factor</button>
+                          </div>
+                        )}
+                        {selectedStatus === "Needs practice" && (
+                          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
+                            <div className="text-sm font-semibold text-amber-900">Keep learning at your pace</div>
+                            <p className="text-xs text-amber-800">Review the learning content, retry this factor, or select another factor. You are not blocked from exploring the tree.</p>
+                            {nextRecommendedFactor && <UIButton variant="secondary" className="w-full" onClick={handleExploreAnother}>Explore another factor <ArrowRight size={15}/></UIButton>}
+                          </div>
+                        )}
                       </div>
                     )}
 
-                    {selectedStatus === "Needs practice" && (
-                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
-                        <div className="text-sm font-semibold text-amber-900">Keep learning at your pace</div>
-                        <p className="text-xs text-amber-800">Review the learning content, retry this factor, or select another factor. You are not blocked from exploring the tree.</p>
-                        {nextRecommendedFactor && <UIButton variant="secondary" className="w-full" onClick={handleExploreAnother}>Explore another factor <ArrowRight size={15}/></UIButton>}
+                    {activeTab === "learning" && (
+                      <div role="tabpanel" className="rounded-lg bg-slate-50 p-4 space-y-2">
+                        <div className="font-semibold text-sm flex items-center gap-2"><BookOpen size={16} /> Learning content</div>
+                        <p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedFactor.learningContent || selectedFactor.description || "No learning content is available for this factor yet."}</p>
+                      </div>
+                    )}
+
+                    {activeTab === "verification" && (
+                      <div role="tabpanel" className="space-y-4">
+                        {(() => {
+                          const questions = selectedFactor.verificationQuestions || [];
+                          const questionCount = questions.length;
+                          const currentIndex = Math.min(currentVerificationQuestion, Math.max(questionCount - 1, 0));
+                          const current = questions[currentIndex];
+                          const factorAnswers = answers[selectedFactor.factorId] || Array(questionCount).fill("");
+                          const allAnswered = questionCount > 0 && factorAnswers.length === questionCount && factorAnswers.every(Boolean);
+                          const progress = questionCount ? ((currentIndex + 1) / questionCount) * 100 : 0;
+
+                          if (!questionCount) {
+                            return <div className="rounded-lg bg-slate-50 p-5 text-center text-sm text-slate-500">No verification questions are available for this factor yet.</div>;
+                          }
+
+                          return (
+                            <>
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="font-semibold text-sm flex items-center gap-2"><ClipboardCheck size={16} /> Verification</div>
+                                <span className="text-xs font-medium text-slate-500">Question {currentIndex + 1} of {questionCount}</span>
+                              </div>
+                              <div className="space-y-2">
+                                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                                  <div className="h-full rounded-full bg-blue-600 transition-all duration-300" style={{ width: `${progress}%` }} />
+                                </div>
+                                <div className="flex items-center justify-between text-xs text-slate-500">
+                                  <span>{factorAnswers.filter(Boolean).length} of {questionCount} answered</span>
+                                  <span>All {questionCount} correct to pass</span>
+                                </div>
+                              </div>
+                              <div className="rounded-xl border bg-white p-4 sm:p-5 space-y-5">
+                                <div className="text-center space-y-2">
+                                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Question {currentIndex + 1}</div>
+                                  <h4 className="text-base sm:text-lg font-semibold text-slate-900">{current.question}</h4>
+                                </div>
+                                <div className="space-y-3">
+                                  {(current.options || []).map((option, optionIndex) => {
+                                    const value = String.fromCharCode(65 + optionIndex);
+                                    const isChecked = factorAnswers[currentIndex] === value;
+                                    return (
+                                      <button key={`${selectedFactor.factorId}-${currentIndex}-${optionIndex}`} type="button"
+                                        onClick={() => setAnswers((previous) => {
+                                          const next = [...(previous[selectedFactor.factorId] || Array(questionCount).fill(""))];
+                                          next[currentIndex] = value;
+                                          return { ...previous, [selectedFactor.factorId]: next };
+                                        })}
+                                        aria-pressed={isChecked}
+                                        className={`w-full rounded-lg border p-3 sm:p-4 text-left transition-colors ${isChecked ? "border-blue-600 bg-blue-50 ring-1 ring-blue-200" : "border-slate-200 hover:border-blue-300 hover:bg-slate-50"}`}>
+                                        <span className="flex items-start gap-3">
+                                          <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${isChecked ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}>{value}</span>
+                                          <span className="pt-0.5 text-sm text-slate-800">{option}</span>
+                                        </span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2">
+                                <UIButton variant="secondary" disabled={currentIndex === 0 || submitting} onClick={() => setCurrentVerificationQuestion((index) => Math.max(0, index - 1))}>Previous</UIButton>
+                                {currentIndex < questionCount - 1 ? (
+                                  <UIButton variant="sky" disabled={!factorAnswers[currentIndex] || submitting} onClick={() => setCurrentVerificationQuestion((index) => Math.min(questionCount - 1, index + 1))}>Next question <ArrowRight size={15} /></UIButton>
+                                ) : (
+                                  <UIButton variant="sky" disabled={!allAnswered || submitting} onClick={() => submitFactor(selectedFactor)}>{submitting && busyFactor === selectedFactor.factorId ? "Submitting..." : "Submit verification"}</UIButton>
+                                )}
+                              </div>
+                              {!allAnswered && currentIndex === questionCount - 1 && <p className="text-xs text-amber-700">Please answer every question. Use Previous to review unanswered questions before submitting.</p>}
+                            </>
+                          );
+                        })()}
                       </div>
                     )}
                   </section>
