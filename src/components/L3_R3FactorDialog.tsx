@@ -79,6 +79,7 @@ export default function R3FactorDialog({
   const [activeTab, setActiveTab] = useState<"selected" | "learning" | "verification">("selected");
   const [currentVerificationQuestion, setCurrentVerificationQuestion] = useState(0);
   const [resultPopup, setResultPopup] = useState<{ score: number; totalQuestions: number } | null>(null);
+  const [progressionNotice, setProgressionNotice] = useState<{ requiredFactor: string; requestedFactor: string } | null>(null);
 
   const allFactors = useMemo(() => collectFactors(data?.factors || []), [data?.factors]);
   const selectedFactor = allFactors.find((factor) => factor.factorId === selectedFactorId) || null;
@@ -112,7 +113,7 @@ export default function R3FactorDialog({
     // already been decomposed into child factors.
     if (factor.effectiveVerified) return "Verified";
     if (factor.children?.length) return "Needs practice";
-    if (local?.status === "Completed" && local.score === 3) return "Verified";
+    if (local?.score === 3 && local.totalQuestions === 3) return "Verified";
     if ((factor.attempts || 0) > 0 || local) return "Needs practice";
     return "Pending";
   };
@@ -127,14 +128,32 @@ export default function R3FactorDialog({
     );
   }, [allFactors, localResults]);
 
-  const nextRecommendedFactor = useMemo(() => {
-    if (!selectedFactor) return null;
-    const currentIndex = allFactors.findIndex((factor) => factor.factorId === selectedFactor.factorId);
-    const ordered = [...allFactors.slice(currentIndex + 1), ...allFactors.slice(0, currentIndex)];
-    return ordered.find((factor) => factor.factorId !== selectedFactor.factorId && getStatus(factor) !== "Verified") || null;
-  }, [allFactors, selectedFactor, localResults]);
+
+  // A student may open a factor only after every factor before it at the
+  // current level has passed verification. Each deeper level has its own sequence.
+  const canOpenFactorAtCurrentLevel = (factor: Factor) => {
+    const targetIndex = currentLevelFactors.findIndex((item: Factor) => item.factorId === factor.factorId);
+    if (targetIndex <= 0) return true;
+
+    const firstUnverifiedPrevious = currentLevelFactors
+      .slice(0, targetIndex)
+      .find((previous: Factor) => getStatus(previous) !== "Verified");
+
+    if (firstUnverifiedPrevious) {
+      // Keep the learner focused on the first unfinished factor.
+      setSelectedFactorId(firstUnverifiedPrevious.factorId);
+      setActiveTab("selected");
+      setProgressionNotice({
+        requiredFactor: firstUnverifiedPrevious.name,
+        requestedFactor: factor.name,
+      });
+      return false;
+    }
+    return true;
+  };
 
   const selectFactor = (factor: Factor) => {
+    if (!canOpenFactorAtCurrentLevel(factor)) return;
     setSelectedFactorId(factor.factorId);
     setCurrentVerificationQuestion(0);
     setError("");
@@ -186,6 +205,7 @@ export default function R3FactorDialog({
   };
 
   const navigateIntoFactor = async (factor: Factor) => {
+    if (!canOpenFactorAtCurrentLevel(factor)) return;
     setError("");
     setSelectedFactorId(null);
     setCurrentVerificationQuestion(0);
@@ -222,24 +242,6 @@ export default function R3FactorDialog({
     setError("");
   };
 
-  const handleExploreAnother = () => {
-    if (!nextRecommendedFactor) return;
-    // Navigate to the level containing the recommended factor, then select it.
-    const findPath = (items: Factor[], targetId: string, path: string[] = []): string[] | null => {
-      for (const item of items) {
-        if (item.factorId === targetId) return path;
-        const found = findPath(item.children || [], targetId, [...path, item.factorId]);
-        if (found) return found;
-      }
-      return null;
-    };
-    const parentPath = findPath(data?.factors || [], nextRecommendedFactor.factorId) || [];
-    setNavigationIds(parentPath);
-    setSelectedFactorId(nextRecommendedFactor.factorId);
-    setCurrentVerificationQuestion(0);
-    setActiveTab("selected");
-    setError("");
-  };
 
   const selectedResult = selectedFactor ? localResults[selectedFactor.factorId] : undefined;
   const selectedStatus = selectedFactor ? getStatus(selectedFactor) : "Pending";
@@ -387,19 +389,10 @@ export default function R3FactorDialog({
                             {busyFactor === selectedFactor.factorId ? "Preparing next level..." : selectedFactor.children?.length ? `View ${selectedFactor.children.length} primary factors` : "Explore Further – identify primary factors"}
                           </UIButton>
                         )}
-                        {selectedResult && selectedResult.score === selectedResult.totalQuestions && nextRecommendedFactor && (
-                          <div className="rounded-lg border border-green-200 bg-green-50 p-3 space-y-2">
-                            <div className="text-sm font-semibold text-green-900 flex items-center gap-2"><CheckCircle2 size={16}/> Factor mastered</div>
-                            <p className="text-xs text-green-800">Recommended next: {nextRecommendedFactor.name}. You can continue now or choose any other factor from the explorer.</p>
-                            <UIButton variant="sky" className="w-full" onClick={handleExploreAnother}>Continue to {nextRecommendedFactor.name} <ArrowRight size={16}/></UIButton>
-                            <button type="button" onClick={() => setSelectedFactorId(null)} className="w-full text-xs text-green-800 underline">Return to R3 tree and choose another factor</button>
-                          </div>
-                        )}
                         {selectedStatus === "Needs practice" && (
                           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
                             <div className="text-sm font-semibold text-amber-900">Keep learning at your pace</div>
-                            <p className="text-xs text-amber-800">Review the learning content, retry this factor, or select another factor. You are not blocked from exploring the tree.</p>
-                            {nextRecommendedFactor && <UIButton variant="secondary" className="w-full" onClick={handleExploreAnother}>Explore another factor <ArrowRight size={15}/></UIButton>}
+                            <p className="text-xs text-amber-800">Review the learning content and retry this factor. The next factor will unlock after this factor is verified.</p>
                           </div>
                         )}
                       </div>
@@ -492,6 +485,27 @@ export default function R3FactorDialog({
 
         <div className="flex justify-end"><UIButton variant="secondary" onClick={onClose}>Close</UIButton></div>
       </DialogContent>
+
+      <Dialog open={!!progressionNotice} onOpenChange={(isOpen) => { if (!isOpen) setProgressionNotice(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><CircleAlert className="text-amber-600" size={20} /> Complete previous factor first</DialogTitle>
+          </DialogHeader>
+          {progressionNotice && (
+            <div className="space-y-3">
+              <p className="text-sm text-slate-700">
+                Please verify <strong>{progressionNotice.requiredFactor}</strong> before proceeding to <strong>{progressionNotice.requestedFactor}</strong>.
+              </p>
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-900">
+                Complete the current factor's verification with 3/3 correct answers to unlock the next factor.
+              </div>
+              <div className="flex justify-end">
+                <UIButton variant="sky" onClick={() => setProgressionNotice(null)}>Understood</UIButton>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!resultPopup} onOpenChange={(isOpen) => { if (!isOpen) setResultPopup(null); }}>
         <DialogContent className="max-w-md">
