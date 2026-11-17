@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import VerificationResult from "@/components/LearningVerification/VerificationResult";
 import UIButton from "@/UI/Elements/Button";
 import { useSubmitR3FactorVerificationMutation, useExpandR3FactorMutation } from "@/service/learningVerification";
 import {
@@ -77,6 +78,7 @@ export default function R3FactorDialog({
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"selected" | "learning" | "verification">("selected");
   const [currentVerificationQuestion, setCurrentVerificationQuestion] = useState(0);
+  const [resultPopup, setResultPopup] = useState<{ score: number; totalQuestions: number } | null>(null);
 
   const allFactors = useMemo(() => collectFactors(data?.factors || []), [data?.factors]);
   const selectedFactor = allFactors.find((factor) => factor.factorId === selectedFactorId) || null;
@@ -99,6 +101,7 @@ export default function R3FactorDialog({
       setAnswers({});
       setLocalResults({});
       setError("");
+      setResultPopup(null);
       setActiveTab("selected");
     }
   }, [open, data?._id, data?.topic]);
@@ -161,6 +164,8 @@ export default function R3FactorDialog({
         ...previous,
         [factor.factorId]: { score, totalQuestions, status },
       }));
+      setResultPopup({ score, totalQuestions });
+      setActiveTab("selected");
       onRetry();
     } catch (e: any) {
       setError(e?.data?.message || "Verification submission failed.");
@@ -487,6 +492,31 @@ export default function R3FactorDialog({
 
         <div className="flex justify-end"><UIButton variant="secondary" onClick={onClose}>Close</UIButton></div>
       </DialogContent>
+
+      <Dialog open={!!resultPopup} onOpenChange={(isOpen) => { if (!isOpen) setResultPopup(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Factor verification result</DialogTitle>
+          </DialogHeader>
+          {resultPopup && (
+            <VerificationResult
+              score={resultPopup.score}
+              totalQuestions={resultPopup.totalQuestions}
+              isCompleted={resultPopup.score === resultPopup.totalQuestions && resultPopup.totalQuestions > 0}
+              onClose={() => setResultPopup(null)}
+              onRetry={() => {
+                setResultPopup(null);
+                setAnswers((previous) => ({
+                  ...previous,
+                  [selectedFactorId || ""]: [],
+                }));
+                setCurrentVerificationQuestion(0);
+                setActiveTab("verification");
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
