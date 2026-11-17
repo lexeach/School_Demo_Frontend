@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   CircleAlert,
   Circle,
+  Lock,
   Network,
   Loader2,
   BookOpen,
@@ -265,31 +266,45 @@ export default function R3FactorDialog({
 
         {data && (
           <>
-            <div className="rounded-xl bg-indigo-50 p-4">
-              <div className="text-xs uppercase tracking-wide text-indigo-600 font-semibold">AI identified topic</div>
-              <div className="text-lg font-bold text-indigo-950">{data.topic}</div>
-              <div className="text-sm text-indigo-800 mt-1">Secondary Factor: {data.secondaryFactor}</div>
+            <div className="relative overflow-hidden rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-700 via-blue-700 to-sky-600 p-4 sm:p-5 text-white shadow-md">
+              <div className="absolute -right-8 -top-10 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+              <div className="relative flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-100">
+                    <Network size={14} /> R3 Learning Journey
+                  </div>
+                  <div className="text-xl font-extrabold tracking-tight">{data.topic}</div>
+                  <div className="mt-1 text-sm text-blue-100">Secondary Factor · {data.secondaryFactor}</div>
+                </div>
+                <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-right backdrop-blur-sm">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-blue-100">Current level</div>
+                  <div className="text-sm font-bold">{currentSecondaryFactor?.name || "R3 Structure"}</div>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-[minmax(260px,0.85fr)_minmax(0,1.5fr)] gap-3 items-start">
-              <aside className="rounded-xl border bg-white p-3 space-y-3 min-w-0">
+            <div className="grid grid-cols-1 md:grid-cols-[minmax(280px,0.88fr)_minmax(0,1.55fr)] gap-4 items-start">
+              <aside className="rounded-2xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4 space-y-4 min-w-0 shadow-sm">
                 <div className="flex items-center justify-between gap-2">
-                  <h3 className="font-semibold text-slate-900">R3 Explorer</h3>
-                  <Network size={17} className="text-slate-500" />
+                  <div>
+                    <h3 className="font-extrabold text-slate-900 tracking-tight">R3 Explorer</h3>
+                    <p className="text-[11px] text-slate-500 mt-0.5">One level at a time · Step-by-step mastery</p>
+                  </div>
+                  <span className="rounded-lg bg-indigo-100 p-2 text-indigo-700"><Network size={17} /></span>
                 </div>
-                <div className="grid grid-cols-3 gap-1 text-center">
-                  <div className="rounded-lg bg-green-50 p-2"><div className="text-lg font-bold text-green-700">{statusCounts.Verified}</div><div className="text-[10px] text-green-700">Verified</div></div>
-                  <div className="rounded-lg bg-amber-50 p-2"><div className="text-lg font-bold text-amber-700">{statusCounts["Needs practice"]}</div><div className="text-[10px] text-amber-700">Practice</div></div>
-                  <div className="rounded-lg bg-slate-100 p-2"><div className="text-lg font-bold text-slate-600">{statusCounts.Pending}</div><div className="text-[10px] text-slate-600">Pending</div></div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-xl border border-emerald-100 bg-gradient-to-b from-emerald-50 to-white p-2.5 shadow-sm"><div className="text-xl font-extrabold text-emerald-700">{statusCounts.Verified}</div><div className="text-[10px] font-bold uppercase tracking-wide text-emerald-700">Verified</div></div>
+                  <div className="rounded-xl border border-amber-100 bg-gradient-to-b from-amber-50 to-white p-2.5 shadow-sm"><div className="text-xl font-extrabold text-amber-700">{statusCounts["Needs practice"]}</div><div className="text-[10px] font-bold uppercase tracking-wide text-amber-700">Practice</div></div>
+                  <div className="rounded-xl border border-slate-200 bg-gradient-to-b from-slate-100 to-white p-2.5 shadow-sm"><div className="text-xl font-extrabold text-slate-600">{statusCounts.Pending}</div><div className="text-[10px] font-bold uppercase tracking-wide text-slate-600">Pending</div></div>
                 </div>
 
                 {navigationIds.length > 0 && (
                   <div className="space-y-2">
                     <button type="button" onClick={() => goBackToLevel(navigationIds.length - 1)}
-                      className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                      className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-white px-3 py-2 text-sm font-bold text-indigo-700 shadow-sm transition hover:bg-indigo-50">
                       <ArrowRight className="rotate-180" size={15} /> Back
                     </button>
-                    <nav aria-label="R3 navigation path" className="flex flex-wrap items-center gap-1 text-xs text-slate-500">
+                    <nav aria-label="R3 navigation path" className="flex flex-wrap items-center gap-1 rounded-lg bg-indigo-50 px-3 py-2 text-xs text-indigo-700">
                       {currentBreadcrumb.map((crumb, index) => (
                         <span key={`${crumb}-${index}`} className="inline-flex items-center gap-1">
                           {index > 0 && <span aria-hidden="true">›</span>}
@@ -303,78 +318,108 @@ export default function R3FactorDialog({
                   </div>
                 )}
 
-                <div className="rounded-lg border p-3 space-y-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Network size={16} className="text-indigo-600 shrink-0" />
+                <div className="overflow-hidden rounded-2xl border border-indigo-200 bg-gradient-to-b from-indigo-50/90 via-white to-white shadow-sm">
+                  <div className="flex items-center gap-2 border-b border-indigo-100 bg-indigo-100/70 px-3 py-3 min-w-0">
+                    <span className="rounded-lg bg-white p-2 text-indigo-700 shadow-sm"><Network size={16} /></span>
                     <div className="min-w-0">
-                      <div className="text-xs text-slate-500">{currentSecondaryFactor ? "Primary factors of" : "Original R3 factor view"}</div>
-                      <div className="font-semibold text-sm text-slate-900 truncate">{currentSecondaryFactor?.name || "R3 Structure"}</div>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.13em] text-indigo-600">{currentSecondaryFactor ? "Primary factors of active secondary factor" : "Original R3 factor view"}</div>
+                      <div className="font-extrabold text-sm text-indigo-950 truncate">{currentSecondaryFactor?.name || "R3 Structure"}</div>
                     </div>
                   </div>
                   {currentLevelFactors.length === 0 ? (
-                    <div className="rounded-md bg-slate-50 p-4 text-center text-sm text-slate-500">
+                    <div className="m-3 rounded-xl border border-dashed border-indigo-200 bg-white p-5 text-center text-sm text-slate-500">
                       No deeper Primary Factors are available at this level yet.
                     </div>
                   ) : (
                     <div className="divide-y divide-slate-100">
-                      {currentLevelFactors.map((factor: Factor) => (
-                        <div key={factor.factorId} className={`py-3 space-y-2 ${selectedFactorId === factor.factorId ? "-mx-1 rounded-md bg-blue-50 px-2" : ""}`}>
-                          <button type="button" onClick={() => selectFactor(factor)} aria-pressed={selectedFactorId === factor.factorId}
-                            className="w-full min-w-0 flex items-start justify-between gap-2 text-left">
-                            <span className="min-w-0 flex-1">
-                              <span className="block text-sm font-semibold text-slate-900">{factor.name}</span>
-                            </span>
-                            <span className="shrink-0 pt-0.5">{renderStatus(factor, true)}</span>
-                          </button>
-                          {(factor.children?.length > 0 || factor.canExploreFurther) && (
-                            <button type="button" disabled={busyFactor === factor.factorId || expanding}
-                              onClick={() => navigateIntoFactor(factor)}
-                              className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:text-blue-900 disabled:opacity-50">
-                              {busyFactor === factor.factorId ? <Loader2 size={13} className="animate-spin" /> : <ChevronRight size={13} />}
-                              {factor.children?.length ? "View primary factors" : "Explore deeper"}
+                      {currentLevelFactors.map((factor: Factor, factorIndex: number) => {
+                        const blockingFactor = currentLevelFactors.slice(0, factorIndex).find((previous: Factor) => getStatus(previous) !== "Verified");
+                        const isLocked = !!blockingFactor;
+                        const isSelected = selectedFactorId === factor.factorId;
+                        const factorStatus = getStatus(factor);
+                        return (
+                          <div key={factor.factorId} className={`mx-2 my-2 overflow-hidden rounded-xl border transition-all duration-200 ${
+                            isSelected ? "border-indigo-400 bg-gradient-to-r from-indigo-100 to-blue-50 shadow-md ring-1 ring-indigo-200" :
+                            factorStatus === "Verified" ? "border-emerald-200 bg-emerald-50/70 hover:border-emerald-300" :
+                            isLocked ? "border-slate-200 bg-slate-100/80 opacity-75" :
+                            factorStatus === "Needs practice" ? "border-amber-200 bg-amber-50/70 hover:border-amber-300" :
+                            "border-white bg-white hover:border-indigo-200 hover:bg-indigo-50/60"
+                          }`}>
+                            <button type="button" onClick={() => selectFactor(factor)} aria-pressed={isSelected}
+                              className="w-full min-w-0 flex items-center justify-between gap-2 px-3 py-3 text-left">
+                              <span className="flex min-w-0 items-center gap-2.5">
+                                <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-extrabold ${
+                                  isSelected ? "bg-indigo-600 text-white" :
+                                  factorStatus === "Verified" ? "bg-emerald-100 text-emerald-700" :
+                                  isLocked ? "bg-slate-200 text-slate-500" :
+                                  factorStatus === "Needs practice" ? "bg-amber-100 text-amber-700" : "bg-white text-indigo-600 shadow-sm"
+                                }`}>{isLocked ? <Lock size={13}/> : factorStatus === "Verified" ? <CheckCircle2 size={15}/> : String(factorIndex + 1).padStart(2, "0")}</span>
+                                <span className="min-w-0">
+                                  <span className={`block truncate text-sm font-bold ${isSelected ? "text-indigo-950" : "text-slate-900"}`}>{factor.name}</span>
+                                  {isLocked && <span className="mt-0.5 block text-[10px] font-medium text-slate-500">Complete {blockingFactor.name} first</span>}
+                                  {isSelected && <span className="mt-0.5 block text-[10px] font-bold uppercase tracking-wide text-indigo-600">Currently selected</span>}
+                                </span>
+                              </span>
+                              <span className="shrink-0">{isLocked ? <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500"><Circle size={12}/> Locked</span> : renderStatus(factor, true)}</span>
                             </button>
-                          )}
-                        </div>
-                      ))}
+                            {!isLocked && (factor.children?.length > 0 || factor.canExploreFurther) && (
+                              <div className="border-t border-indigo-100/80 px-3 py-2">
+                                <button type="button" disabled={busyFactor === factor.factorId || expanding}
+                                  onClick={() => navigateIntoFactor(factor)}
+                                  className="inline-flex items-center gap-1.5 rounded-lg bg-white/80 px-2.5 py-1.5 text-[11px] font-bold text-indigo-700 shadow-sm transition hover:bg-white disabled:opacity-50">
+                                  {busyFactor === factor.factorId ? <Loader2 size={13} className="animate-spin" /> : <ChevronRight size={13} />}
+                                  {factor.children?.length ? "Open primary factors" : "Explore deeper"}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
+                  <div className="border-t border-indigo-100 bg-white/80 px-3 py-2 text-[10px] font-medium text-indigo-700">
+                    <span className="inline-flex items-center gap-1"><CheckCircle2 size={12}/> Verify in sequence to unlock the next factor</span>
+                  </div>
                 </div>
-                <p className="text-xs text-slate-500">Only one level of Primary Factors is shown at a time. Use Back to return to the previous Secondary Factor.</p>
+                <p className="rounded-lg bg-slate-100 px-3 py-2 text-[11px] leading-relaxed text-slate-500">Only one level of Primary Factors is shown at a time. Use Back to return to the previous Secondary Factor.</p>
               </aside>
 
               <main className="min-w-0">
                 {!selectedFactor ? (
-                  <div className="rounded-xl border bg-slate-50 p-8 text-center space-y-2">
-                    <Target className="mx-auto text-indigo-500" size={28} />
+                  <div className="rounded-2xl border border-dashed border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-sky-50 p-10 text-center space-y-3 shadow-sm">
+                    <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700 shadow-inner"><Target size={28} /></span>
                     <h3 className="font-semibold text-slate-900">Choose a factor to begin</h3>
                     <p className="text-sm text-slate-600">Select a factor to open its learning and verification panel. Use “Explore deeper” to view that factor’s own Primary Factors.</p>
                   </div>
                 ) : (
-                  <section className="rounded-xl border bg-white p-4 space-y-4" aria-live="polite">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div className="min-w-0"><div className="text-xs uppercase tracking-wide text-slate-500 font-semibold">R3 factor details</div><h3 className="text-lg font-bold text-slate-900">{selectedFactor.name}</h3></div>
-                      {renderStatus(selectedFactor)}
+                  <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg shadow-indigo-100/60 space-y-0" aria-live="polite">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-indigo-100 bg-gradient-to-r from-slate-900 via-indigo-950 to-indigo-800 px-4 py-4 text-white">
+                      <div className="min-w-0"><div className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-200">Selected R3 factor</div><h3 className="text-xl font-extrabold tracking-tight">{selectedFactor.name}</h3><p className="mt-1 text-xs text-indigo-200">{currentSecondaryFactor?.name || "Original R3 Structure"}</p></div>
+                      <span className="rounded-full bg-white px-3 py-1.5 text-slate-800 shadow-sm">{renderStatus(selectedFactor)}</span>
                     </div>
 
-                    <div role="tablist" aria-label="Factor details" className="grid grid-cols-3 gap-1 rounded-lg bg-slate-100 p-1">
+                    <div className="bg-white px-4 pt-4">
+                    <div role="tablist" aria-label="Factor details" className="grid grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 shadow-inner">
                       <button type="button" role="tab" aria-selected={activeTab === "selected"} onClick={() => setActiveTab("selected")}
-                        className={`rounded-md px-2 py-2 text-xs sm:text-sm font-semibold transition-colors ${activeTab === "selected" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}>
+                        className={`rounded-lg px-2 py-2.5 text-xs sm:text-sm font-bold transition-all ${activeTab === "selected" ? "bg-gradient-to-b from-indigo-600 to-blue-700 text-white shadow-md" : "text-slate-600 hover:bg-white hover:text-indigo-700"}`}>
                         Selected factor
                       </button>
                       <button type="button" role="tab" aria-selected={activeTab === "learning"} onClick={() => setActiveTab("learning")}
-                        className={`rounded-md px-2 py-2 text-xs sm:text-sm font-semibold transition-colors ${activeTab === "learning" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}>
+                        className={`rounded-lg px-2 py-2.5 text-xs sm:text-sm font-bold transition-all ${activeTab === "learning" ? "bg-gradient-to-b from-indigo-600 to-blue-700 text-white shadow-md" : "text-slate-600 hover:bg-white hover:text-indigo-700"}`}>
                         Learning content
                       </button>
                       <button type="button" role="tab" aria-selected={activeTab === "verification"} onClick={() => setActiveTab("verification")}
-                        className={`rounded-md px-2 py-2 text-xs sm:text-sm font-semibold transition-colors ${activeTab === "verification" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`}>
+                        className={`rounded-lg px-2 py-2.5 text-xs sm:text-sm font-bold transition-all ${activeTab === "verification" ? "bg-gradient-to-b from-indigo-600 to-blue-700 text-white shadow-md" : "text-slate-600 hover:bg-white hover:text-indigo-700"}`}>
                         Verification
                       </button>
                     </div>
 
+                    </div>
+                    <div className="p-4 sm:p-5 space-y-4">
                     {activeTab === "selected" && (
                       <div role="tabpanel" className="space-y-4">
-                        <div className="rounded-lg bg-slate-50 p-4 space-y-2">
-                          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Factor overview</div>
+                        <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-5 space-y-3 shadow-sm">
+                          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.12em] text-indigo-700"><Target size={15}/> Factor overview</div>
                           <p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedFactor.description || "No additional description is available for this factor."}</p>
                           <div className="pt-1">{renderStatus(selectedFactor)}</div>
                         </div>
@@ -385,7 +430,7 @@ export default function R3FactorDialog({
                           </div>
                         )}
                         {(selectedFactor.children?.length > 0 || selectedFactor.canExploreFurther) && (
-                          <UIButton variant="secondary" className="w-full" disabled={expanding || busyFactor === selectedFactor.factorId} onClick={() => navigateIntoFactor(selectedFactor)}>
+                          <UIButton variant="sky" className="w-full shadow-md" disabled={expanding || busyFactor === selectedFactor.factorId} onClick={() => navigateIntoFactor(selectedFactor)}>
                             {busyFactor === selectedFactor.factorId ? "Preparing next level..." : selectedFactor.children?.length ? `View ${selectedFactor.children.length} primary factors` : "Explore Further – identify primary factors"}
                           </UIButton>
                         )}
@@ -399,8 +444,8 @@ export default function R3FactorDialog({
                     )}
 
                     {activeTab === "learning" && (
-                      <div role="tabpanel" className="rounded-lg bg-slate-50 p-4 space-y-2">
-                        <div className="font-semibold text-sm flex items-center gap-2"><BookOpen size={16} /> Learning content</div>
+                      <div role="tabpanel" className="rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-white p-5 space-y-3 shadow-sm">
+                        <div className="font-extrabold text-sm flex items-center gap-2 text-sky-800"><span className="rounded-lg bg-white p-2 shadow-sm"><BookOpen size={16} /></span> Learning content</div>
                         <p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedFactor.learningContent || selectedFactor.description || "No learning content is available for this factor yet."}</p>
                       </div>
                     )}
@@ -422,20 +467,20 @@ export default function R3FactorDialog({
 
                           return (
                             <>
-                              <div className="flex items-center justify-between gap-2">
-                                <div className="font-semibold text-sm flex items-center gap-2"><ClipboardCheck size={16} /> Verification</div>
+                              <div className="flex items-center justify-between gap-2 rounded-xl border border-violet-100 bg-violet-50 px-3 py-3">
+                                <div className="font-extrabold text-sm flex items-center gap-2 text-violet-800"><span className="rounded-lg bg-white p-2 shadow-sm"><ClipboardCheck size={16} /></span> Verification challenge</div>
                                 <span className="text-xs font-medium text-slate-500">Question {currentIndex + 1} of {questionCount}</span>
                               </div>
                               <div className="space-y-2">
                                 <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                                  <div className="h-full rounded-full bg-blue-600 transition-all duration-300" style={{ width: `${progress}%` }} />
+                                  <div className="h-full rounded-full bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-500 transition-all duration-300" style={{ width: `${progress}%` }} />
                                 </div>
                                 <div className="flex items-center justify-between text-xs text-slate-500">
                                   <span>{factorAnswers.filter(Boolean).length} of {questionCount} answered</span>
                                   <span>All {questionCount} correct to pass</span>
                                 </div>
                               </div>
-                              <div className="rounded-xl border bg-white p-4 sm:p-5 space-y-5">
+                              <div className="rounded-2xl border border-violet-100 bg-gradient-to-b from-white to-violet-50/50 p-4 sm:p-5 space-y-5 shadow-sm">
                                 <div className="text-center space-y-2">
                                   <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Question {currentIndex + 1}</div>
                                   <h4 className="text-base sm:text-lg font-semibold text-slate-900">{current.question}</h4>
@@ -452,7 +497,7 @@ export default function R3FactorDialog({
                                           return { ...previous, [selectedFactor.factorId]: next };
                                         })}
                                         aria-pressed={isChecked}
-                                        className={`w-full rounded-lg border p-3 sm:p-4 text-left transition-colors ${isChecked ? "border-blue-600 bg-blue-50 ring-1 ring-blue-200" : "border-slate-200 hover:border-blue-300 hover:bg-slate-50"}`}>
+                                        className={`w-full rounded-xl border p-3 sm:p-4 text-left transition-all duration-150 ${isChecked ? "border-indigo-500 bg-indigo-50 ring-2 ring-indigo-100 shadow-sm" : "border-slate-200 bg-white hover:border-indigo-300 hover:bg-indigo-50/50 hover:shadow-sm"}`}>
                                         <span className="flex items-start gap-3">
                                           <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${isChecked ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}>{value}</span>
                                           <span className="pt-0.5 text-sm text-slate-800">{option}</span>
@@ -476,6 +521,7 @@ export default function R3FactorDialog({
                         })()}
                       </div>
                     )}
+                    </div>
                   </section>
                 )}
               </main>
