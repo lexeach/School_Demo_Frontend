@@ -93,7 +93,7 @@ export default function R3FactorDialog({
   const [learningBusyFactor, setLearningBusyFactor] = useState("");
   const [learningContentByFactor, setLearningContentByFactor] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState<"learning" | "verification">("verification");
+  const [activeTab, setActiveTab] = useState<"learning" | "verification" | "history">("verification");
   const [currentVerificationQuestion, setCurrentVerificationQuestion] = useState(0);
   const [resultPopup, setResultPopup] = useState<{ score: number; totalQuestions: number; factorId: string; navigationIds: string[] } | null>(null);
   const [progressionNotice, setProgressionNotice] = useState<{ requiredFactor: string; requestedFactor: string } | null>(null);
@@ -141,13 +141,6 @@ export default function R3FactorDialog({
   };
 
   const getAttemptCount = (factor: Factor) => localResults[factor.factorId]?.attempts ?? factor.attempts ?? 0;
-
-  // Always resolve attempt history from the latest local result first, then the persisted factor data.
-  // Older records may have an attempt count but no detailed history array.
-  const getAttemptHistory = (factor: Factor) => {
-    const history = localResults[factor.factorId]?.attemptHistory ?? factor.attemptHistory;
-    return Array.isArray(history) ? history : [];
-  };
 
   // Automatically focus the first unfinished factor whenever a level is
   // opened with no current selection. This keeps the right panel useful on
@@ -569,6 +562,27 @@ export default function R3FactorDialog({
                     </div>
 
                     <div className="bg-white px-4 pt-4">
+                    <div role="tablist" aria-label="Factor details" className="grid grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 shadow-inner">
+                      {((selectedFactor.attempts || 0) > 0 && (selectedFactor.score ?? 0) < 3) || (localResults[selectedFactor.factorId]?.score ?? 3) < 3 && !!localResults[selectedFactor.factorId] ? (
+                        <button type="button" role="tab" aria-selected={activeTab === "learning"} onClick={() => setActiveTab("learning")}
+                          className={`rounded-lg px-2 py-2.5 text-xs sm:text-sm font-bold transition-all ${activeTab === "learning" ? "bg-gradient-to-b from-indigo-600 to-blue-700 text-white shadow-md" : "text-slate-600 hover:bg-white hover:text-indigo-700"}`}>
+                          Learning content
+                        </button>
+                      ) : <div className="rounded-lg px-2 py-2.5 text-center text-xs sm:text-sm font-bold text-slate-400">Learning content unlocks after a failed attempt</div>}
+                      <button type="button" role="tab" aria-selected={activeTab === "verification"} onClick={() => setActiveTab("verification")}
+                        className={`rounded-lg px-2 py-2.5 text-xs sm:text-sm font-bold transition-all ${activeTab === "verification" ? "bg-gradient-to-b from-indigo-600 to-blue-700 text-white shadow-md" : "text-slate-600 hover:bg-white hover:text-indigo-700"}`}>
+                        Verification
+                      </button>
+                      <button type="button" role="tab" aria-selected={activeTab === "history"} onClick={() => setActiveTab("history")}
+                        className={`rounded-lg px-2 py-2.5 text-xs sm:text-sm font-bold transition-all ${activeTab === "history" ? "bg-gradient-to-b from-indigo-600 to-blue-700 text-white shadow-md" : "text-slate-600 hover:bg-white hover:text-indigo-700"}`}>
+                        Attempt History
+                      </button>
+                    </div>
+
+                    </div>
+                    <div className="p-4 sm:p-5 space-y-4">
+                    {activeTab === "history" && (
+                      <div role="tabpanel" className="space-y-4">
                     {(() => {
                       const history = getAttemptHistory(selectedFactor);
                       const attempts = getAttemptCount(selectedFactor);
@@ -602,21 +616,9 @@ export default function R3FactorDialog({
                         </div>
                       );
                     })()}
-                    <div role="tablist" aria-label="Factor details" className="grid grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 shadow-inner">
-                      {((selectedFactor.attempts || 0) > 0 && (selectedFactor.score ?? 0) < 3) || (localResults[selectedFactor.factorId]?.score ?? 3) < 3 && !!localResults[selectedFactor.factorId] ? (
-                        <button type="button" role="tab" aria-selected={activeTab === "learning"} onClick={() => setActiveTab("learning")}
-                          className={`rounded-lg px-2 py-2.5 text-xs sm:text-sm font-bold transition-all ${activeTab === "learning" ? "bg-gradient-to-b from-indigo-600 to-blue-700 text-white shadow-md" : "text-slate-600 hover:bg-white hover:text-indigo-700"}`}>
-                          Learning content
-                        </button>
-                      ) : <div className="rounded-lg px-2 py-2.5 text-center text-xs sm:text-sm font-bold text-slate-400">Learning content unlocks after a failed attempt</div>}
-                      <button type="button" role="tab" aria-selected={activeTab === "verification"} onClick={() => setActiveTab("verification")}
-                        className={`rounded-lg px-2 py-2.5 text-xs sm:text-sm font-bold transition-all ${activeTab === "verification" ? "bg-gradient-to-b from-indigo-600 to-blue-700 text-white shadow-md" : "text-slate-600 hover:bg-white hover:text-indigo-700"}`}>
-                        Verification
-                      </button>
-                    </div>
+                      </div>
+                    )}
 
-                    </div>
-                    <div className="p-4 sm:p-5 space-y-4">
                     {activeTab === "learning" && (
                       <div role="tabpanel" className="rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-white p-5 space-y-4 shadow-sm">
                         <div className="font-extrabold text-sm flex items-center gap-2 text-sky-800">
