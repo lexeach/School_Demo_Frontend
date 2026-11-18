@@ -71,7 +71,7 @@ export default function R3FactorDialog({
   data: any;
   isGenerating: boolean;
   error: string;
-  onRetry: () => Promise<void> | void;
+  onRetry: () => void;
 }) {
   const [submit, { isLoading: submitting }] = useSubmitR3FactorVerificationMutation();
   const [generateQuestions, { isLoading: generatingQuestions }] = useGenerateR3FactorQuestionsMutation();
@@ -106,10 +106,8 @@ export default function R3FactorDialog({
     : (data?.factors || []);
   const currentBreadcrumb = ["R3 Explorer", ...navigationPath.map((factor) => factor.name)];
 
-  // Reset workspace only when the dialog opens. Expansion refreshes data and may
-  // temporarily clear the query result; that must not reset the learner's level.
   useEffect(() => {
-    if (open) {
+    if (open && data?.factors) {
       setNavigationIds([]);
       setSelectedFactorId(null);
       setAnswers({});
@@ -121,7 +119,7 @@ export default function R3FactorDialog({
       setResultPopup(null);
       setActiveTab("verification");
     }
-  }, [open]);
+  }, [open, data?._id, data?.topic]);
 
   const getStatus = (factor: Factor): FactorStatus => {
     const local = localResults[factor.factorId];
@@ -298,7 +296,11 @@ export default function R3FactorDialog({
       return;
     }
 
-    if (!factor.canExploreFurther) {
+    // A failed verification makes this factor eligible for deeper exploration
+    // immediately, even when the server's canExploreFurther flag is stale.
+    // Keep the existing server flag for factors that have not failed yet.
+    const failedVerification = getStatus(factor) === "Needs practice";
+    if (!factor.canExploreFurther && !failedVerification) {
       setSelectedFactorId(factor.factorId);
       return;
     }
@@ -306,12 +308,10 @@ export default function R3FactorDialog({
     setBusyFactor(factor.factorId);
     try {
       await expand({ paperId, questionId, questionNumber, factorId: factor.factorId }).unwrap();
-      // Refresh the saved tree before navigating. Keep navigation state while
-      // the parent query briefly refreshes, then enter the expanded factor.
-      await onRetry();
-      setSelectedFactorId(null);
-      setCurrentVerificationQuestion(0);
+      // Navigate into this Secondary Factor. The refreshed query supplies its
+      // newly generated Primary Factors; the list itself never renders deeper levels.
       setNavigationIds((previous) => [...previous, factor.factorId]);
+      onRetry();
     } catch (e: any) {
       setError(e?.data?.message || "Unable to generate deeper factors.");
       setSelectedFactorId(factor.factorId);
@@ -446,7 +446,7 @@ export default function R3FactorDialog({
                               </span>
                               <span className="shrink-0">{isLocked ? <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500"><Circle size={12}/> Locked</span> : renderStatus(factor, true)}</span>
                             </button>
-                            {!isLocked && (factor.children?.length > 0 || factor.canExploreFurther) && (
+                            {!isLocked && (factor.children?.length > 0 || factor.canExploreFurther || factorStatus === "Needs practice") && (
                               <div className="border-t border-indigo-100/80 px-3 py-2">
                                 <button type="button" disabled={busyFactor === factor.factorId || expanding}
                                   onClick={() => navigateIntoFactor(factor)}
