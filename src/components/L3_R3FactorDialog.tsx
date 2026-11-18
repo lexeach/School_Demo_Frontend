@@ -93,7 +93,7 @@ export default function R3FactorDialog({
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"learning" | "verification">("verification");
   const [currentVerificationQuestion, setCurrentVerificationQuestion] = useState(0);
-  const [resultPopup, setResultPopup] = useState<{ score: number; totalQuestions: number } | null>(null);
+  const [resultPopup, setResultPopup] = useState<{ score: number; totalQuestions: number; factorId: string; navigationIds: string[] } | null>(null);
   const [progressionNotice, setProgressionNotice] = useState<{ requiredFactor: string; requestedFactor: string } | null>(null);
 
   const allFactors = useMemo(() => collectFactors(data?.factors || []), [data?.factors]);
@@ -234,7 +234,9 @@ export default function R3FactorDialog({
         ...previous,
         [factor.factorId]: { score, totalQuestions, status },
       }));
-      setResultPopup({ score, totalQuestions });
+      // Preserve the exact factor and navigation level that produced this result.
+      // Closing the result dialog must never move the learner into a different level.
+      setResultPopup({ score, totalQuestions, factorId: factor.factorId, navigationIds: [...navigationIds] });
       setQuestionSets((previous) => { const next = { ...previous }; delete next[factor.factorId]; return next; });
       setAnswers((previous) => ({ ...previous, [factor.factorId]: [] }));
       setActiveTab("verification");
@@ -360,6 +362,18 @@ export default function R3FactorDialog({
     setError("");
   };
 
+
+  const closeResultPopup = () => {
+    if (resultPopup) {
+      // Restore the verification context captured at submit time. This protects
+      // nested R3 levels from stale parent/child selection after the modal closes.
+      setNavigationIds(resultPopup.navigationIds);
+      setSelectedFactorId(resultPopup.factorId);
+      setCurrentVerificationQuestion(0);
+      setActiveTab("verification");
+    }
+    setResultPopup(null);
+  };
 
   const selectedResult = selectedFactor ? localResults[selectedFactor.factorId] : undefined;
   const selectedStatus = selectedFactor ? getStatus(selectedFactor) : "Pending";
@@ -689,7 +703,7 @@ export default function R3FactorDialog({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!resultPopup} onOpenChange={(isOpen) => { if (!isOpen) setResultPopup(null); }}>
+      <Dialog open={!!resultPopup} onOpenChange={(isOpen) => { if (!isOpen) closeResultPopup(); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Factor verification result</DialogTitle>
@@ -699,13 +713,12 @@ export default function R3FactorDialog({
               score={resultPopup.score}
               totalQuestions={resultPopup.totalQuestions}
               isCompleted={resultPopup.score === resultPopup.totalQuestions && resultPopup.totalQuestions > 0}
-              onClose={() => setResultPopup(null)}
+              onClose={closeResultPopup}
               onRetry={() => {
-                setResultPopup(null);
-                setAnswers((previous) => ({
-                  ...previous,
-                  [selectedFactorId || ""]: [],
-                }));
+                const factorId = resultPopup.factorId;
+                closeResultPopup();
+                setAnswers((previous) => ({ ...previous, [factorId]: [] }));
+                setQuestionSets((previous) => { const next = { ...previous }; delete next[factorId]; return next; });
                 setCurrentVerificationQuestion(0);
                 setActiveTab("verification");
               }}
