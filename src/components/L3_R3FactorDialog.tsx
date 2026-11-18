@@ -62,6 +62,7 @@ export default function R3FactorDialog({
   isGenerating,
   error: generationError,
   onRetry,
+  onExpanded,
 }: {
   open: boolean;
   onClose: () => void;
@@ -72,6 +73,7 @@ export default function R3FactorDialog({
   isGenerating: boolean;
   error: string;
   onRetry: () => void;
+  onExpanded: (factorId: string, children: Factor[]) => void;
 }) {
   const [submit, { isLoading: submitting }] = useSubmitR3FactorVerificationMutation();
   const [generateQuestions, { isLoading: generatingQuestions }] = useGenerateR3FactorQuestionsMutation();
@@ -307,11 +309,14 @@ export default function R3FactorDialog({
 
     setBusyFactor(factor.factorId);
     try {
-      await expand({ paperId, questionId, questionNumber, factorId: factor.factorId }).unwrap();
-      // Navigate into this Secondary Factor. The refreshed query supplies its
-      // newly generated Primary Factors; the list itself never renders deeper levels.
+      const response: any = await expand({ paperId, questionId, questionNumber, factorId: factor.factorId }).unwrap();
+      const payload = response?.data || response;
+      const children = Array.isArray(payload?.children) ? payload.children : [];
+      if (!children.length) throw new Error("No deeper Primary Factors were returned. Please try again.");
+      // Merge the newly generated children into the current tree. Do not call
+      // onRetry: it regenerates the original R3 structure and clears r3Data.
+      onExpanded(factor.factorId, children);
       setNavigationIds((previous) => [...previous, factor.factorId]);
-      onRetry();
     } catch (e: any) {
       setError(e?.data?.message || "Unable to generate deeper factors.");
       setSelectedFactorId(factor.factorId);
