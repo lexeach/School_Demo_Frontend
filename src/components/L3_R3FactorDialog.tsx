@@ -2,7 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import VerificationResult from "@/components/LearningVerification/VerificationResult";
 import UIButton from "@/UI/Elements/Button";
-import { useSubmitR3FactorVerificationMutation, useExpandR3FactorMutation } from "@/service/learningVerification";
+import {
+  useSubmitR3FactorVerificationMutation,
+  useExpandR3FactorMutation,
+  useGenerateR3FactorLearningContentMutation,
+} from "@/service/learningVerification";
 import {
   CheckCircle2,
   CircleAlert,
@@ -70,12 +74,15 @@ export default function R3FactorDialog({
 }) {
   const [submit, { isLoading: submitting }] = useSubmitR3FactorVerificationMutation();
   const [expand, { isLoading: expanding }] = useExpandR3FactorMutation();
+  const [generateLearningContent] = useGenerateR3FactorLearningContentMutation();
   const [answers, setAnswers] = useState<Record<string, string[]>>({});
   const [localResults, setLocalResults] = useState<Record<string, LocalResult>>({});
   // Navigation stack: each entry is a Secondary Factor whose Primary Factors are shown.
   const [navigationIds, setNavigationIds] = useState<string[]>([]);
   const [selectedFactorId, setSelectedFactorId] = useState<string | null>(null);
   const [busyFactor, setBusyFactor] = useState("");
+  const [learningBusyFactor, setLearningBusyFactor] = useState("");
+  const [learningContentByFactor, setLearningContentByFactor] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"selected" | "learning" | "verification">("selected");
   const [currentVerificationQuestion, setCurrentVerificationQuestion] = useState(0);
@@ -102,6 +109,8 @@ export default function R3FactorDialog({
       setSelectedFactorId(null);
       setAnswers({});
       setLocalResults({});
+      setLearningContentByFactor({});
+      setLearningBusyFactor("");
       setError("");
       setResultPopup(null);
       setActiveTab("selected");
@@ -191,6 +200,33 @@ export default function R3FactorDialog({
       setError(e?.data?.message || "Verification submission failed.");
     } finally {
       setBusyFactor("");
+    }
+  };
+
+  const getFactorLearningContent = (factor: Factor) =>
+    learningContentByFactor[factor.factorId] ?? factor.learningContent ?? "";
+
+  const handleGenerateLearningContent = async (factor: Factor) => {
+    if (getFactorLearningContent(factor).trim() || learningBusyFactor) return;
+    setError("");
+    setLearningBusyFactor(factor.factorId);
+    try {
+      const response: any = await generateLearningContent({
+        paperId,
+        questionId,
+        questionNumber,
+        factorId: factor.factorId,
+      }).unwrap();
+      const payload = response?.data || response;
+      const content = String(payload?.learningContent || "").trim();
+      if (!content) throw new Error("Learning content was not returned. Please try again.");
+      setLearningContentByFactor((previous) => ({ ...previous, [factor.factorId]: content }));
+      // The backend has saved this against the question-specific R3 factor.
+      // Keep the current factor selected; a fresh R3 open will load the saved text.
+    } catch (e: any) {
+      setError(e?.data?.message || e?.message || "Unable to generate learning content. Please try again.");
+    } finally {
+      setLearningBusyFactor("");
     }
   };
 
@@ -444,9 +480,39 @@ export default function R3FactorDialog({
                     )}
 
                     {activeTab === "learning" && (
-                      <div role="tabpanel" className="rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-white p-5 space-y-3 shadow-sm">
-                        <div className="font-extrabold text-sm flex items-center gap-2 text-sky-800"><span className="rounded-lg bg-white p-2 shadow-sm"><BookOpen size={16} /></span> Learning content</div>
-                        <p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedFactor.learningContent || selectedFactor.description || "No learning content is available for this factor yet."}</p>
+                      <div role="tabpanel" className="rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-white p-5 space-y-4 shadow-sm">
+                        <div className="font-extrabold text-sm flex items-center gap-2 text-sky-800">
+                          <span className="rounded-lg bg-white p-2 shadow-sm"><BookOpen size={16} /></span>
+                          Learning content
+                        </div>
+                        {getFactorLearningContent(selectedFactor).trim() ? (
+                          <div className="rounded-xl border border-sky-100 bg-white p-4 shadow-sm">
+                            <p className="text-sm leading-7 text-slate-700 whitespace-pre-wrap">{getFactorLearningContent(selectedFactor)}</p>
+                          </div>
+                        ) : (
+                          <div className="rounded-xl border border-dashed border-sky-200 bg-white/90 p-6 text-center space-y-3">
+                            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-100 text-sky-700">
+                              <BookOpen size={22} />
+                            </span>
+                            <div>
+                              <h4 className="font-bold text-slate-900">Learning content is not generated yet</h4>
+                              <p className="mt-1 text-sm text-slate-500">Generate an explanation for this factor only when you need it.</p>
+                            </div>
+                            <UIButton
+                              variant="sky"
+                              className="w-full sm:w-auto shadow-md"
+                              disabled={learningBusyFactor === selectedFactor.factorId || !!learningBusyFactor}
+                              onClick={() => handleGenerateLearningContent(selectedFactor)}
+                            >
+                              {learningBusyFactor === selectedFactor.factorId ? (
+                                <><Loader2 size={15} className="mr-2 animate-spin" /> Generating learning content...</>
+                              ) : (
+                                <><BookOpen size={15} className="mr-2" /> Generate Learning Content</>
+                              )}
+                            </UIButton>
+                            <p className="text-[11px] text-slate-400">Approximately 150–200 words · AI-generated on request</p>
+                          </div>
+                        )}
                       </div>
                     )}
 

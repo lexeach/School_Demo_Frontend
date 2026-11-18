@@ -199,3 +199,4 @@ export const API_SUBMIT_LEARNING_VERIFICATION =
 export const API_R3_GENERATE = "/api/r3/generate";
 export const API_R3_VERIFY = "/api/r3/verify";
 export const API_R3_EXPAND = "/api/r3/expand";
+export const API_R3_LEARNING_CONTENT = "/api/r3/learning-content";
