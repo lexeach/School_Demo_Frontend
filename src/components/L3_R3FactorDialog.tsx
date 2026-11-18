@@ -128,6 +128,24 @@ export default function R3FactorDialog({
     return "Pending";
   };
 
+  // Automatically focus the first unfinished factor whenever a level is
+  // opened with no current selection. This keeps the right panel useful on
+  // initial open, after navigating deeper, and when returning with Back.
+  // The existing sequential-access rule remains enforced by selectFactor().
+  useEffect(() => {
+    if (!open || !data?.factors?.length || selectedFactorId) return;
+
+    const firstUnverifiedFactor = currentLevelFactors.find(
+      (factor: Factor) => getStatus(factor) !== "Verified",
+    );
+
+    if (firstUnverifiedFactor) {
+      setSelectedFactorId(firstUnverifiedFactor.factorId);
+      setCurrentVerificationQuestion(0);
+      setActiveTab("selected");
+    }
+  }, [open, data?.factors, currentLevelFactors, selectedFactorId, localResults]);
+
   const statusCounts = useMemo(() => {
     return allFactors.reduce(
       (counts, factor) => {
@@ -424,8 +442,16 @@ export default function R3FactorDialog({
                 {!selectedFactor ? (
                   <div className="rounded-2xl border border-dashed border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-sky-50 p-10 text-center space-y-3 shadow-sm">
                     <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700 shadow-inner"><Target size={28} /></span>
-                    <h3 className="font-semibold text-slate-900">Choose a factor to begin</h3>
-                    <p className="text-sm text-slate-600">Select a factor to open its learning and verification panel. Use “Explore deeper” to view that factor’s own Primary Factors.</p>
+                    <h3 className="font-semibold text-slate-900">
+                      {currentLevelFactors.length > 0 && currentLevelFactors.every((factor: Factor) => getStatus(factor) === "Verified")
+                        ? "All factors verified"
+                        : "Choose a factor to begin"}
+                    </h3>
+                    <p className="text-sm text-slate-600">
+                      {currentLevelFactors.length > 0 && currentLevelFactors.every((factor: Factor) => getStatus(factor) === "Verified")
+                        ? "You have completed every factor at this level. Use Back to return or close the R3 Explorer."
+                        : "Select a factor to open its learning and verification panel. Use “Explore deeper” to view that factor’s own Primary Factors."}
+                    </p>
                   </div>
                 ) : (
                   <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg shadow-indigo-100/60 space-y-0" aria-live="polite">
