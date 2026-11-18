@@ -67,6 +67,7 @@ export default function R3FactorDialog({
   error: generationError,
   onRetry,
   onExpanded,
+  onProgressUpdated,
 }: {
   open: boolean;
   onClose: () => void;
@@ -78,6 +79,7 @@ export default function R3FactorDialog({
   error: string;
   onRetry: () => void;
   onExpanded: (factorId: string, children: Factor[], terminal?: boolean) => void;
+  onProgressUpdated?: () => Promise<void>;
 }) {
   const [submit, { isLoading: submitting }] = useSubmitR3FactorVerificationMutation();
   const [generateQuestions, { isLoading: generatingQuestions }] = useGenerateR3FactorQuestionsMutation();
@@ -282,14 +284,21 @@ export default function R3FactorDialog({
       });
       // Preserve the exact factor and navigation level that produced this result.
       // Closing the result dialog must never move the learner into a different level.
-      setResultPopup({ score, totalQuestions, factorId: factor.factorId, navigationIds: [...navigationIds] });
       setQuestionSets((previous) => { const next = { ...previous }; delete next[factor.factorId]; return next; });
       setAnswers((previous) => ({ ...previous, [factor.factorId]: [] }));
       setActiveTab("verification");
-      // Do not call onRetry here: it regenerates/refetches the R3 data and
-      // can reset the dialog while the result popup is being displayed.
-      // The latest result is already reflected locally; fresh server data
-      // will be loaded the next time the learner opens R3.
+
+      // Re-read the already-saved R3 tree immediately after submission. This
+      // recalculates parent effectiveVerified from its children and unlocks the
+      // next sibling in the same open workspace, without closing/reopening it.
+      // Keep the result modal available even if the progress refresh fails.
+      try {
+        await onProgressUpdated?.();
+      } catch (refreshError) {
+        console.error("R3 progress refresh failed after verification:", refreshError);
+      }
+
+      setResultPopup({ score, totalQuestions, factorId: factor.factorId, navigationIds: [...navigationIds] });
     } catch (e: any) {
       setError(e?.data?.message || "Verification submission failed.");
     } finally {

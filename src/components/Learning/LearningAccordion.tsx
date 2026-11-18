@@ -162,6 +162,22 @@ const handleOpenR3 = async () => {
     }
 };
 
+// Refresh the existing R3 tree after a verification result. The backend's
+// getOrGenerate endpoint returns the saved tree plus freshly calculated
+// per-user progress; it does not regenerate an existing R3 structure.
+const refreshR3Progress = async () => {
+    const currentPaperId = String(paperId || "").trim();
+    const currentQuestionNumber = Number(question?.questionNumber);
+    if (!currentPaperId || !Number.isInteger(currentQuestionNumber) || currentQuestionNumber < 1) return;
+
+    const response: any = await generateR3({
+        paperId: currentPaperId,
+        questionId: String(currentQuestionNumber),
+        questionNumber: currentQuestionNumber,
+    }).unwrap();
+    setR3Data(response?.data || response);
+};
+
 // Merge an expanded factor's children into the current R3 tree without
 // regenerating the original R3 structure or clearing the open dialog.
 const handleR3Expanded = (factorId: string, children: any[], terminal = false) => {
@@ -471,6 +487,7 @@ Please wait...
       error={r3Error}
       onRetry={handleOpenR3}
       onExpanded={handleR3Expanded}
+      onProgressUpdated={refreshR3Progress}
     />
   </>
 )}
