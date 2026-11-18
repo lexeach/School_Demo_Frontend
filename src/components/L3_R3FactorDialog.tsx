@@ -97,7 +97,6 @@ export default function R3FactorDialog({
   const [progressionNotice, setProgressionNotice] = useState<{ requiredFactor: string; requestedFactor: string } | null>(null);
 
   const allFactors = useMemo(() => collectFactors(data?.factors || []), [data?.factors]);
-  const selectedFactor = allFactors.find((factor) => factor.factorId === selectedFactorId) || null;
 
   // Resolve the current navigation level from the latest server data. This avoids
   // keeping stale factor objects when the Expand API refreshes the R3 structure.
@@ -108,6 +107,9 @@ export default function R3FactorDialog({
   const currentLevelFactors = currentSecondaryFactor
     ? (currentSecondaryFactor.children || [])
     : (data?.factors || []);
+  // The right panel must only ever display a factor from the level currently
+  // visible on the left. A stale parent ID must not drive verification.
+  const selectedFactor = currentLevelFactors.find((factor) => factor.factorId === selectedFactorId) || null;
   const currentBreadcrumb = ["R3 Explorer", ...navigationPath.map((factor) => factor.name)];
 
   useEffect(() => {
@@ -141,7 +143,15 @@ export default function R3FactorDialog({
   // initial open, after navigating deeper, and when returning with Back.
   // The existing sequential-access rule remains enforced by selectFactor().
   useEffect(() => {
-    if (!open || !data?.factors?.length || selectedFactorId) return;
+    if (!open || !data?.factors?.length) return;
+
+    // A selected ID from the previous level is stale after entering a nested
+    // level. Do not let it keep the parent in the right panel while the left
+    // panel shows the child's first Pending factor.
+    const selectionBelongsToCurrentLevel = currentLevelFactors.some(
+      (factor: Factor) => factor.factorId === selectedFactorId,
+    );
+    if (selectionBelongsToCurrentLevel) return;
 
     const firstUnverifiedFactor = currentLevelFactors.find(
       (factor: Factor) => getStatus(factor) !== "Verified",
@@ -151,6 +161,10 @@ export default function R3FactorDialog({
       setSelectedFactorId(firstUnverifiedFactor.factorId);
       setCurrentVerificationQuestion(0);
       setActiveTab("verification");
+    } else {
+      // If every factor at this level is verified, leave the right panel empty
+      // rather than showing a parent or an unrelated factor.
+      setSelectedFactorId(null);
     }
   }, [open, data?.factors, currentLevelFactors, selectedFactorId, localResults]);
 
