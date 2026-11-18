@@ -44,9 +44,11 @@ type Factor = {
   attempts?: number;
   score?: number | null;
   totalQuestions?: number;
+  bestScore?: number;
+  attemptHistory?: { attemptNumber: number; attemptedAt?: string | null; score: number; totalQuestions: number; status: string }[];
 };
 
-type LocalResult = { score: number; totalQuestions: number; status: string };
+type LocalResult = { score: number; totalQuestions: number; status: string; attempts?: number; bestScore?: number; attemptHistory?: { attemptNumber: number; attemptedAt?: string | null; score: number; totalQuestions: number; status: string }[] };
 
 type FactorStatus = "Verified" | "Needs practice" | "Pending";
 
@@ -137,6 +139,8 @@ export default function R3FactorDialog({
     if ((factor.attempts || 0) > 0 || local) return "Needs practice";
     return "Pending";
   };
+
+  const getAttemptCount = (factor: Factor) => localResults[factor.factorId]?.attempts ?? factor.attempts ?? 0;
 
   // Automatically focus the first unfinished factor whenever a level is
   // opened with no current selection. This keeps the right panel useful on
@@ -230,10 +234,27 @@ export default function R3FactorDialog({
       const score = Number(result?.score ?? 0);
       const totalQuestions = Number(result?.totalQuestions ?? questions.length);
       const status = String(result?.status || (score === totalQuestions ? "Completed" : "Pending"));
-      setLocalResults((previous) => ({
-        ...previous,
-        [factor.factorId]: { score, totalQuestions, status },
-      }));
+      setLocalResults((previous) => {
+        const prior = previous[factor.factorId];
+        const previousHistory = prior?.attemptHistory ?? factor.attemptHistory ?? [];
+        const attemptNumber = Number(result?.attemptNumber ?? ((prior?.attempts ?? factor.attempts ?? 0) + 1));
+        const history = [...previousHistory, {
+          attemptNumber,
+          attemptedAt: new Date().toISOString(),
+          score,
+          totalQuestions,
+          status,
+        }];
+        return {
+          ...previous,
+          [factor.factorId]: {
+            score, totalQuestions, status,
+            attempts: attemptNumber,
+            bestScore: Math.max(prior?.bestScore ?? factor.bestScore ?? 0, score),
+            attemptHistory: history,
+          },
+        };
+      });
       // Preserve the exact factor and navigation level that produced this result.
       // Closing the result dialog must never move the learner into a different level.
       setResultPopup({ score, totalQuestions, factorId: factor.factorId, navigationIds: [...navigationIds] });
@@ -491,6 +512,7 @@ export default function R3FactorDialog({
                                   <span className={`block truncate text-sm font-bold ${isSelected ? "text-indigo-950" : "text-slate-900"}`}>{factor.name}</span>
                                   {isLocked && <span className="mt-0.5 block text-[10px] font-medium text-slate-500">Complete {blockingFactor.name} first</span>}
                                   {isSelected && <span className="mt-0.5 block text-[10px] font-bold uppercase tracking-wide text-indigo-600">Currently selected</span>}
+                                  {getAttemptCount(factor) > 0 && <span className="mt-0.5 block text-[10px] font-medium text-slate-500">{getAttemptCount(factor)} verification {getAttemptCount(factor) === 1 ? "attempt" : "attempts"}</span>}
                                 </span>
                               </span>
                               <span className="shrink-0">{isLocked ? <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500"><Circle size={12}/> Locked</span> : renderStatus(factor, true)}</span>
@@ -540,6 +562,39 @@ export default function R3FactorDialog({
                     </div>
 
                     <div className="bg-white px-4 pt-4">
+                    {(() => {
+                      const history = getAttemptHistory(selectedFactor);
+                      const attempts = getAttemptCount(selectedFactor);
+                      const bestScore = localResults[selectedFactor.factorId]?.bestScore ?? selectedFactor.bestScore ?? (history.length ? Math.max(...history.map((item) => item.score)) : selectedFactor.score ?? 0);
+                      const lastScore = history.length ? history[history.length - 1].score : (attempts ? selectedFactor.score ?? 0 : null);
+                      return (
+                        <div className="mb-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                          <div className="mb-2 flex items-center justify-between gap-2">
+                            <h4 className="text-sm font-bold text-slate-900">Verification attempt history</h4>
+                            <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700">{attempts} total</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="rounded-lg bg-slate-50 p-2"><div className="text-lg font-extrabold text-slate-900">{attempts}</div><div className="text-[10px] text-slate-500">Attempts</div></div>
+                            <div className="rounded-lg bg-slate-50 p-2"><div className="text-lg font-extrabold text-slate-900">{attempts ? `${bestScore}/3` : "—"}</div><div className="text-[10px] text-slate-500">Best score</div></div>
+                            <div className="rounded-lg bg-slate-50 p-2"><div className="text-lg font-extrabold text-slate-900">{lastScore === null ? "—" : `${lastScore}/3`}</div><div className="text-[10px] text-slate-500">Last score</div></div>
+                          </div>
+                          {history.length > 0 ? (
+                            <div className="mt-3 space-y-1.5">
+                              {[...history].reverse().map((attempt) => (
+                                <div key={`${selectedFactor.factorId}-attempt-${attempt.attemptNumber}`} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-100 px-2.5 py-2 text-xs">
+                                  <span className="font-semibold text-slate-700">Attempt {attempt.attemptNumber}</span>
+                                  <span className="text-slate-600">{attempt.score}/{attempt.totalQuestions}</span>
+                                  <span className={attempt.status === "Completed" ? "font-semibold text-emerald-700" : "font-semibold text-amber-700"}>{attempt.status === "Completed" ? "Passed" : "Failed"}</span>
+                                  <span className="text-slate-400">{attempt.attemptedAt ? new Date(attempt.attemptedAt).toLocaleDateString() : ""}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="mt-2 text-[11px] text-slate-500">{attempts > 0 ? "Earlier attempts were counted, but detailed history is unavailable for those older attempts." : "No verification attempts yet."}</p>
+                          )}
+                        </div>
+                      );
+                    })()}
                     <div role="tablist" aria-label="Factor details" className="grid grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 shadow-inner">
                       {((selectedFactor.attempts || 0) > 0 && (selectedFactor.score ?? 0) < 3) || (localResults[selectedFactor.factorId]?.score ?? 3) < 3 && !!localResults[selectedFactor.factorId] ? (
                         <button type="button" role="tab" aria-selected={activeTab === "learning"} onClick={() => setActiveTab("learning")}
