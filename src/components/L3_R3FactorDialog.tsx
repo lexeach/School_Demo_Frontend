@@ -213,7 +213,10 @@ export default function R3FactorDialog({
       }));
       setResultPopup({ score, totalQuestions });
       setActiveTab("verification");
-      onRetry();
+      // Do not call onRetry here: it regenerates/refetches the R3 data and
+      // can reset the dialog while the result popup is being displayed.
+      // The latest result is already reflected locally; fresh server data
+      // will be loaded the next time the learner opens R3.
     } catch (e: any) {
       setError(e?.data?.message || "Verification submission failed.");
     } finally {
