@@ -4,7 +4,6 @@ import VerificationResult from "@/components/LearningVerification/VerificationRe
 import UIButton from "@/UI/Elements/Button";
 import {
   useSubmitR3FactorVerificationMutation,
-  useGenerateR3FactorQuestionsMutation,
   useExpandR3FactorMutation,
   useGenerateR3FactorLearningContentMutation,
 } from "@/service/learningVerification";
@@ -71,14 +70,12 @@ export default function R3FactorDialog({
   data: any;
   isGenerating: boolean;
   error: string;
-  onRetry: () => void;
+  onRetry: () => Promise<void> | void;
 }) {
   const [submit, { isLoading: submitting }] = useSubmitR3FactorVerificationMutation();
-  const [generateQuestions, { isLoading: generatingQuestions }] = useGenerateR3FactorQuestionsMutation();
   const [expand, { isLoading: expanding }] = useExpandR3FactorMutation();
   const [generateLearningContent] = useGenerateR3FactorLearningContentMutation();
   const [answers, setAnswers] = useState<Record<string, string[]>>({});
-  const [questionSets, setQuestionSets] = useState<Record<string, { attemptId: string; questions: VerificationQuestion[] }>>({});
   const [localResults, setLocalResults] = useState<Record<string, LocalResult>>({});
   // Navigation stack: each entry is a Secondary Factor whose Primary Factors are shown.
   const [navigationIds, setNavigationIds] = useState<string[]>([]);
@@ -106,12 +103,14 @@ export default function R3FactorDialog({
     : (data?.factors || []);
   const currentBreadcrumb = ["R3 Explorer", ...navigationPath.map((factor) => factor.name)];
 
+  // Reset workspace state only when the dialog is opened. The parent temporarily
+  // clears data while refreshing it after expansion; resetting on data changes
+  // would erase navigationIds and send the learner back to the root level.
   useEffect(() => {
-    if (open && data?.factors) {
+    if (open) {
       setNavigationIds([]);
       setSelectedFactorId(null);
       setAnswers({});
-      setQuestionSets({});
       setLocalResults({});
       setLearningContentByFactor({});
       setLearningBusyFactor("");
@@ -119,7 +118,7 @@ export default function R3FactorDialog({
       setResultPopup(null);
       setActiveTab("verification");
     }
-  }, [open, data?._id, data?.topic]);
+  }, [open]);
 
   const getStatus = (factor: Factor): FactorStatus => {
     const local = localResults[factor.factorId];
@@ -194,7 +193,7 @@ export default function R3FactorDialog({
 
   const submitFactor = async (factor: Factor) => {
     const selected = answers[factor.factorId] || [];
-    const questions = questionSets[factor.factorId]?.questions || [];
+    const questions = factor.verificationQuestions || [];
     if (selected.length !== questions.length || selected.some((answer) => !answer)) return;
 
     setBusyFactor(factor.factorId);
@@ -205,7 +204,6 @@ export default function R3FactorDialog({
         questionId,
         questionNumber,
         factorId: factor.factorId,
-        attemptId: questionSets[factor.factorId]?.attemptId,
         answers: selected,
       }).unwrap();
       const result = response?.data || response;
@@ -217,8 +215,6 @@ export default function R3FactorDialog({
         [factor.factorId]: { score, totalQuestions, status },
       }));
       setResultPopup({ score, totalQuestions });
-      setQuestionSets((previous) => { const next = { ...previous }; delete next[factor.factorId]; return next; });
-      setAnswers((previous) => ({ ...previous, [factor.factorId]: [] }));
       setActiveTab("verification");
       // Do not call onRetry here: it regenerates/refetches the R3 data and
       // can reset the dialog while the result popup is being displayed.
@@ -228,22 +224,6 @@ export default function R3FactorDialog({
       setError(e?.data?.message || "Verification submission failed.");
     } finally {
       setBusyFactor("");
-    }
-  };
-
-  const handleGenerateQuestions = async (factor: Factor) => {
-    setError("");
-    setAnswers((previous) => ({ ...previous, [factor.factorId]: [] }));
-    setCurrentVerificationQuestion(0);
-    try {
-      const response: any = await generateQuestions({ paperId, questionId, questionNumber, factorId: factor.factorId }).unwrap();
-      const payload = response?.data || response;
-      const questions = (payload?.questions || []).map((q: any, i: number) => ({ ...q, questionNumber: i + 1 }));
-      if (questions.length !== 3 || !payload?.attemptId) throw new Error("A valid set of three questions was not returned.");
-      setQuestionSets((previous) => ({ ...previous, [factor.factorId]: { attemptId: payload.attemptId, questions } }));
-      setAnswers((previous) => ({ ...previous, [factor.factorId]: ["", "", ""] }));
-    } catch (e: any) {
-      setError(e?.data?.message || e?.message || "Unable to generate verification questions. Please try again.");
     }
   };
 
@@ -304,10 +284,12 @@ export default function R3FactorDialog({
     setBusyFactor(factor.factorId);
     try {
       await expand({ paperId, questionId, questionNumber, factorId: factor.factorId }).unwrap();
-      // Navigate into this Secondary Factor. The refreshed query supplies its
-      // newly generated Primary Factors; the list itself never renders deeper levels.
+      // Refresh the saved tree first, then navigate. The refresh briefly clears
+      // parent data; the dialog's navigation state is intentionally preserved.
+      await onRetry();
+      setSelectedFactorId(null);
+      setCurrentVerificationQuestion(0);
       setNavigationIds((previous) => [...previous, factor.factorId]);
-      onRetry();
     } catch (e: any) {
       setError(e?.data?.message || "Unable to generate deeper factors.");
       setSelectedFactorId(factor.factorId);
@@ -335,7 +317,7 @@ export default function R3FactorDialog({
         </DialogHeader>
 
         {isGenerating && !data ? (
-          <div className="py-12 text-center"><Loader2 className="animate-spin mx-auto" /><p className="mt-3 text-sm text-slate-500">AI is identifying the topic and preparing the R3 factor structure. This may take a moment.</p></div>
+          <div className="py-12 text-center"><Loader2 className="animate-spin mx-auto" /><p className="mt-3 text-sm text-slate-500">AI is identifying the topic and preparing root-factor verification sets. This may take a moment.</p></div>
         ) : null}
 
         {(generationError || error) && (
@@ -488,12 +470,11 @@ export default function R3FactorDialog({
 
                     <div className="bg-white px-4 pt-4">
                     <div role="tablist" aria-label="Factor details" className="grid grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 shadow-inner">
-                      {((selectedFactor.attempts || 0) > 0 && (selectedFactor.score ?? 0) < 3) || (localResults[selectedFactor.factorId]?.score ?? 3) < 3 && !!localResults[selectedFactor.factorId] ? (
-                        <button type="button" role="tab" aria-selected={activeTab === "learning"} onClick={() => setActiveTab("learning")}
-                          className={`rounded-lg px-2 py-2.5 text-xs sm:text-sm font-bold transition-all ${activeTab === "learning" ? "bg-gradient-to-b from-indigo-600 to-blue-700 text-white shadow-md" : "text-slate-600 hover:bg-white hover:text-indigo-700"}`}>
-                          Learning content
-                        </button>
-                      ) : <div className="rounded-lg px-2 py-2.5 text-center text-xs sm:text-sm font-bold text-slate-400">Learning content unlocks after a failed attempt</div>}
+                      <button type="button" role="tab" aria-selected={activeTab === "learning"} onClick={() => setActiveTab("learning")}
+ onClick={() => setActiveTab("learning")}
+                        className={`rounded-lg px-2 py-2.5 text-xs sm:text-sm font-bold transition-all ${activeTab === "learning" ? "bg-gradient-to-b from-indigo-600 to-blue-700 text-white shadow-md" : "text-slate-600 hover:bg-white hover:text-indigo-700"}`}>
+                        Learning content
+                      </button>
                       <button type="button" role="tab" aria-selected={activeTab === "verification"} onClick={() => setActiveTab("verification")}
                         className={`rounded-lg px-2 py-2.5 text-xs sm:text-sm font-bold transition-all ${activeTab === "verification" ? "bg-gradient-to-b from-indigo-600 to-blue-700 text-white shadow-md" : "text-slate-600 hover:bg-white hover:text-indigo-700"}`}>
                         Verification
@@ -542,8 +523,7 @@ export default function R3FactorDialog({
                     {activeTab === "verification" && (
                       <div role="tabpanel" className="space-y-4">
                         {(() => {
-                          const currentSet = questionSets[selectedFactor.factorId];
-                          const questions = currentSet?.questions || [];
+                          const questions = selectedFactor.verificationQuestions || [];
                           const questionCount = questions.length;
                           const currentIndex = Math.min(currentVerificationQuestion, Math.max(questionCount - 1, 0));
                           const current = questions[currentIndex];
@@ -552,14 +532,7 @@ export default function R3FactorDialog({
                           const progress = questionCount ? ((currentIndex + 1) / questionCount) * 100 : 0;
 
                           if (!questionCount) {
-                            return <div className="rounded-2xl border border-violet-100 bg-gradient-to-b from-violet-50 to-white p-6 text-center space-y-3">
-                              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-white text-violet-700 shadow-sm"><ClipboardCheck size={22} /></div>
-                              <h4 className="font-bold text-slate-900">Ready to verify this factor?</h4>
-                              <p className="text-sm text-slate-500">Generate a fresh set of three questions. Each new attempt uses a new set.</p>
-                              <UIButton variant="sky" disabled={generatingQuestions} onClick={() => handleGenerateQuestions(selectedFactor)}>
-                                {generatingQuestions ? <><Loader2 size={15} className="mr-2 animate-spin" /> Generating questions...</> : <><RefreshCw size={15} className="mr-2" /> Generate Verification Questions</>}
-                              </UIButton>
-                            </div>;
+                            return <div className="rounded-lg bg-slate-50 p-5 text-center text-sm text-slate-500">No verification questions are available for this factor yet.</div>;
                           }
 
                           return (
