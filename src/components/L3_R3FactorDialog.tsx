@@ -84,7 +84,7 @@ export default function R3FactorDialog({
   const [learningBusyFactor, setLearningBusyFactor] = useState("");
   const [learningContentByFactor, setLearningContentByFactor] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState<"selected" | "learning" | "verification">("selected");
+  const [activeTab, setActiveTab] = useState<"learning" | "verification">("verification");
   const [currentVerificationQuestion, setCurrentVerificationQuestion] = useState(0);
   const [resultPopup, setResultPopup] = useState<{ score: number; totalQuestions: number } | null>(null);
   const [progressionNotice, setProgressionNotice] = useState<{ requiredFactor: string; requestedFactor: string } | null>(null);
@@ -113,7 +113,7 @@ export default function R3FactorDialog({
       setLearningBusyFactor("");
       setError("");
       setResultPopup(null);
-      setActiveTab("selected");
+      setActiveTab("verification");
     }
   }, [open, data?._id, data?.topic]);
 
@@ -142,7 +142,7 @@ export default function R3FactorDialog({
     if (firstUnverifiedFactor) {
       setSelectedFactorId(firstUnverifiedFactor.factorId);
       setCurrentVerificationQuestion(0);
-      setActiveTab("selected");
+      setActiveTab("verification");
     }
   }, [open, data?.factors, currentLevelFactors, selectedFactorId, localResults]);
 
@@ -170,7 +170,7 @@ export default function R3FactorDialog({
     if (firstUnverifiedPrevious) {
       // Keep the learner focused on the first unfinished factor.
       setSelectedFactorId(firstUnverifiedPrevious.factorId);
-      setActiveTab("selected");
+      setActiveTab("verification");
       setProgressionNotice({
         requiredFactor: firstUnverifiedPrevious.name,
         requestedFactor: factor.name,
@@ -185,7 +185,7 @@ export default function R3FactorDialog({
     setSelectedFactorId(factor.factorId);
     setCurrentVerificationQuestion(0);
     setError("");
-    setActiveTab("selected");
+    setActiveTab("verification");
   };
 
   const submitFactor = async (factor: Factor) => {
@@ -212,7 +212,7 @@ export default function R3FactorDialog({
         [factor.factorId]: { score, totalQuestions, status },
       }));
       setResultPopup({ score, totalQuestions });
-      setActiveTab("selected");
+      setActiveTab("verification");
       onRetry();
     } catch (e: any) {
       setError(e?.data?.message || "Verification submission failed.");
@@ -461,12 +461,9 @@ export default function R3FactorDialog({
                     </div>
 
                     <div className="bg-white px-4 pt-4">
-                    <div role="tablist" aria-label="Factor details" className="grid grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 shadow-inner">
-                      <button type="button" role="tab" aria-selected={activeTab === "selected"} onClick={() => setActiveTab("selected")}
-                        className={`rounded-lg px-2 py-2.5 text-xs sm:text-sm font-bold transition-all ${activeTab === "selected" ? "bg-gradient-to-b from-indigo-600 to-blue-700 text-white shadow-md" : "text-slate-600 hover:bg-white hover:text-indigo-700"}`}>
-                        Selected factor
-                      </button>
+                    <div role="tablist" aria-label="Factor details" className="grid grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 shadow-inner">
                       <button type="button" role="tab" aria-selected={activeTab === "learning"} onClick={() => setActiveTab("learning")}
+ onClick={() => setActiveTab("learning")}
                         className={`rounded-lg px-2 py-2.5 text-xs sm:text-sm font-bold transition-all ${activeTab === "learning" ? "bg-gradient-to-b from-indigo-600 to-blue-700 text-white shadow-md" : "text-slate-600 hover:bg-white hover:text-indigo-700"}`}>
                         Learning content
                       </button>
@@ -478,33 +475,6 @@ export default function R3FactorDialog({
 
                     </div>
                     <div className="p-4 sm:p-5 space-y-4">
-                    {activeTab === "selected" && (
-                      <div role="tabpanel" className="space-y-4">
-                        <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-5 space-y-3 shadow-sm">
-                          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.12em] text-indigo-700"><Target size={15}/> Factor overview</div>
-                          <p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedFactor.description || "No additional description is available for this factor."}</p>
-                          <div className="pt-1">{renderStatus(selectedFactor)}</div>
-                        </div>
-                        {selectedResult && (
-                          <div className={`rounded-lg p-3 text-sm ${selectedResult.score === selectedResult.totalQuestions ? "bg-green-50 text-green-800" : "bg-amber-50 text-amber-800"}`}>
-                            <div className="font-semibold">{selectedResult.score === selectedResult.totalQuestions ? "Excellent! Factor verification passed." : "This factor needs more practice."}</div>
-                            <div>{selectedResult.score}/{selectedResult.totalQuestions} correct answers.</div>
-                          </div>
-                        )}
-                        {(selectedFactor.children?.length > 0 || selectedFactor.canExploreFurther) && (
-                          <UIButton variant="sky" className="w-full shadow-md" disabled={expanding || busyFactor === selectedFactor.factorId} onClick={() => navigateIntoFactor(selectedFactor)}>
-                            {busyFactor === selectedFactor.factorId ? "Preparing next level..." : selectedFactor.children?.length ? `View ${selectedFactor.children.length} primary factors` : "Explore Further – identify primary factors"}
-                          </UIButton>
-                        )}
-                        {selectedStatus === "Needs practice" && (
-                          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
-                            <div className="text-sm font-semibold text-amber-900">Keep learning at your pace</div>
-                            <p className="text-xs text-amber-800">Review the learning content and retry this factor. The next factor will unlock after this factor is verified.</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
                     {activeTab === "learning" && (
                       <div role="tabpanel" className="rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-white p-5 space-y-4 shadow-sm">
                         <div className="font-extrabold text-sm flex items-center gap-2 text-sky-800">
