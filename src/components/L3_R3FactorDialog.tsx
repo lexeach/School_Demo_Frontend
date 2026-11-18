@@ -39,6 +39,8 @@ type Factor = {
   ownVerified: boolean;
   effectiveVerified: boolean;
   canExploreFurther: boolean;
+  terminal?: boolean;
+  expansionStatus?: "unexpanded" | "expanded" | "terminal";
   attempts?: number;
   score?: number | null;
   totalQuestions?: number;
@@ -73,7 +75,7 @@ export default function R3FactorDialog({
   isGenerating: boolean;
   error: string;
   onRetry: () => void;
-  onExpanded: (factorId: string, children: Factor[]) => void;
+  onExpanded: (factorId: string, children: Factor[], terminal?: boolean) => void;
 }) {
   const [submit, { isLoading: submitting }] = useSubmitR3FactorVerificationMutation();
   const [generateQuestions, { isLoading: generatingQuestions }] = useGenerateR3FactorQuestionsMutation();
@@ -293,6 +295,12 @@ export default function R3FactorDialog({
     setSelectedFactorId(null);
     setCurrentVerificationQuestion(0);
 
+    if (factor.terminal || factor.expansionStatus === "terminal") {
+      setSelectedFactorId(factor.factorId);
+      setError("This is a terminal factor. No further Primary Factors are needed.");
+      return;
+    }
+
     if (factor.children?.length) {
       setNavigationIds((previous) => [...previous, factor.factorId]);
       return;
@@ -312,9 +320,15 @@ export default function R3FactorDialog({
       const response: any = await expand({ paperId, questionId, questionNumber, factorId: factor.factorId }).unwrap();
       const payload = response?.data || response;
       const children = Array.isArray(payload?.children) ? payload.children : [];
+      // A terminal factor is a valid result, not a generation failure.
+      if (payload?.terminal === true) {
+        onExpanded(factor.factorId, [], true);
+        setSelectedFactorId(factor.factorId);
+        setError("This is a terminal factor. No further Primary Factors are needed.");
+        return;
+      }
       if (!children.length) throw new Error("No deeper Primary Factors were returned. Please try again.");
-      // Merge the newly generated children into the current tree. Do not call
-      // onRetry: it regenerates the original R3 structure and clears r3Data.
+      // Merge children into the existing R3 tree without regenerating its root.
       onExpanded(factor.factorId, children);
       setNavigationIds((previous) => [...previous, factor.factorId]);
     } catch (e: any) {
@@ -417,7 +431,9 @@ export default function R3FactorDialog({
                   </div>
                   {currentLevelFactors.length === 0 ? (
                     <div className="m-3 rounded-xl border border-dashed border-indigo-200 bg-white p-5 text-center text-sm text-slate-500">
-                      No deeper Primary Factors are available at this level yet.
+                      {currentSecondaryFactor?.terminal
+                        ? "Terminal Factor: no further Primary Factors are needed at this level."
+                        : "No deeper Primary Factors have been generated at this level yet."}
                     </div>
                   ) : (
                     <div className="divide-y divide-slate-100">
@@ -451,7 +467,7 @@ export default function R3FactorDialog({
                               </span>
                               <span className="shrink-0">{isLocked ? <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500"><Circle size={12}/> Locked</span> : renderStatus(factor, true)}</span>
                             </button>
-                            {!isLocked && (factor.children?.length > 0 || factor.canExploreFurther || factorStatus === "Needs practice") && (
+                            {!isLocked && !factor.terminal && (factor.children?.length > 0 || factor.canExploreFurther || factorStatus === "Needs practice") && (
                               <div className="border-t border-indigo-100/80 px-3 py-2">
                                 <button type="button" disabled={busyFactor === factor.factorId || expanding}
                                   onClick={() => navigateIntoFactor(factor)}

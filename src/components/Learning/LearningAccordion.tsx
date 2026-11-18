@@ -164,11 +164,11 @@ const handleOpenR3 = async () => {
 
 // Merge an expanded factor's children into the current R3 tree without
 // regenerating the original R3 structure or clearing the open dialog.
-const handleR3Expanded = (factorId: string, children: any[]) => {
+const handleR3Expanded = (factorId: string, children: any[], terminal = false) => {
     setR3Data((previous: any) => {
         if (!previous) return previous;
         const mergeChildren = (factors: any[] = []): any[] => factors.map((factor) => {
-            if (factor.factorId === factorId) return { ...factor, children };
+            if (factor.factorId === factorId) return { ...factor, children, terminal, expansionStatus: terminal ? "terminal" : "expanded" };
             if (Array.isArray(factor.children) && factor.children.length) {
                 return { ...factor, children: mergeChildren(factor.children) };
             }
