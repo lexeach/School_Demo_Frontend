@@ -140,7 +140,32 @@ export default function R3FactorDialog({
     return "Pending";
   };
 
-  const getAttemptCount = (factor: Factor) => localResults[factor.factorId]?.attempts ?? factor.attempts ?? 0;
+  const getAttemptCount = (factor: Factor) =>
+    localResults[factor.factorId]?.attempts ?? factor.attempts ?? factor.attemptHistory?.length ?? 0;
+
+  // Use the in-session history when available; otherwise fall back to the
+  // persisted history supplied by the R3 API. Older records may have only an
+  // attempts counter and no detailed history array.
+  const getAttemptHistory = (factor: Factor) => {
+    const localHistory = localResults[factor.factorId]?.attemptHistory;
+    const persistedHistory = factor.attemptHistory;
+    const history = Array.isArray(localHistory) && localHistory.length > 0
+      ? localHistory
+      : Array.isArray(persistedHistory)
+        ? persistedHistory
+        : [];
+
+    return history
+      .filter((item) => item && Number.isFinite(Number(item.score)))
+      .map((item, index) => ({
+        attemptNumber: Number(item.attemptNumber) || index + 1,
+        attemptedAt: item.attemptedAt ?? null,
+        score: Number(item.score) || 0,
+        totalQuestions: Number(item.totalQuestions) || factor.totalQuestions || 3,
+        status: String(item.status || (Number(item.score) === 3 ? "Completed" : "Failed")),
+      }))
+      .sort((a, b) => a.attemptNumber - b.attemptNumber);
+  };
 
   // Automatically focus the first unfinished factor whenever a level is
   // opened with no current selection. This keeps the right panel useful on
